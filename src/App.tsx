@@ -1,131 +1,116 @@
-import { Calendar, Users, Clock, CheckCircle } from "lucide-react";
+import { Calendar, Users, Bell, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function App() {
+  const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-800">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-indigo-50 text-gray-900">
+      {/* Navbar */}
+      <header className="bg-white/90 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">BookingManager</h1>
-          <button className="bg-black text-white px-4 py-2 rounded-xl hover:opacity-90 transition">
+          <h1 className="text-2xl font-extrabold text-indigo-600">
+            BookingManager
+          </h1>
+          <button className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-semibold shadow hover:bg-indigo-700 transition"
+          onClick={() => navigate("/auth")}
+          >
             Get Started
           </button>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <aside className="bg-white rounded-2xl shadow p-6 md:col-span-1">
-          <nav className="space-y-4">
-            <div className="font-semibold text-lg">Dashboard</div>
-            <ul className="space-y-2 text-sm">
-              <li className="text-gray-900 font-medium">Overview</li>
-              <li className="text-gray-500">Bookings</li>
-              <li className="text-gray-500">Customers</li>
-              <li className="text-gray-500">Services</li>
-              <li className="text-gray-500">Settings</li>
-            </ul>
-          </nav>
-        </aside>
+      {/* Hero Section */}
+      <section className="max-w-4xl mx-auto px-6 py-28 text-center">
+        <h2 className="text-4xl md:text-5xl font-extrabold leading-tight text-gray-900">
+          Manage bookings, queues, and customers in one place.
+        </h2>
+        <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
+          BookingManager helps local businesses handle appointments, real-time queues, and customer notifications effortlessly.
+        </p>
+        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+          <button className="bg-indigo-600 text-white px-7 py-3 rounded-2xl font-semibold shadow hover:bg-indigo-700 transition"
+             onClick={() => navigate("/auth")}
+          >
+            Get Started
+          </button>
+          <button className="border border-gray-200 px-7 py-3 rounded-2xl font-semibold bg-white hover:bg-gray-50 transition">
+            View Demo
+          </button>
+        </div>
+      </section>
 
-        {/* Content */}
-        <main className="md:col-span-3 space-y-6">
-          {/* Welcome Card */}
-          <section className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-semibold mb-2">Welcome to BookingManager 👋</h2>
-            <p className="text-gray-600">
-              Manage your bookings, track customers, and optimize your schedule in one place.
+      {/* Features */}
+      <section className="py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <h3 className="text-3xl font-extrabold text-gray-900">
+              Everything you need to run your bookings
+            </h3>
+            <p className="text-gray-600 mt-4">
+              From real-time queue tracking to automated notifications, BookingManager simplifies your daily operations.
             </p>
-          </section>
+          </div>
 
-          {/* Stats */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              icon={<Calendar size={20} />}
-              label="Total Bookings"
-              value="128"
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard
+              icon={<Calendar size={24} />}
+              title="Smart Scheduling"
+              desc="Manage appointments and availability with an intuitive calendar."
+              color="bg-indigo-600"
             />
-            <StatCard
-              icon={<Users size={20} />}
-              label="Customers"
-              value="54"
+            <FeatureCard
+              icon={<Users size={24} />}
+              title="Customer Management"
+              desc="Keep track of your customers and their booking history."
+              color="bg-pink-600"
             />
-            <StatCard
-              icon={<Clock size={20} />}
-              label="Pending"
-              value="9"
+            <FeatureCard
+              icon={<Bell size={24} />}
+              title="Real-time Notifications"
+              desc="Notify clients before their turn and reduce waiting time."
+              color="bg-amber-500"
             />
-            <StatCard
-              icon={<CheckCircle size={20} />}
-              label="Completed"
-              value="87"
+            <FeatureCard
+              icon={<BarChart3 size={24} />}
+              title="Analytics & Insights"
+              desc="Understand booking trends and grow your business faster."
+              color="bg-emerald-600"
             />
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* Recent Bookings Table */}
-          <section className="bg-white rounded-2xl shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Recent Bookings</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b">
-                    <th className="py-2">Customer</th>
-                    <th className="py-2">Service</th>
-                    <th className="py-2">Date</th>
-                    <th className="py-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  <Row name="John Doe" service="Haircut" date="12 Mar 2026" status="Confirmed" />
-                  <Row name="Sarah Lee" service="Consultation" date="13 Mar 2026" status="Pending" />
-                  <Row name="Alex Kim" service="Repair Service" date="14 Mar 2026" status="Completed" />
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="bg-black text-white rounded-2xl shadow p-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-2xl font-semibold">Ready to manage bookings smarter?</h3>
-              <p className="text-gray-300 mt-1">
-                Set up your services and start accepting bookings in minutes.
-              </p>
-            </div>
-            <button className="bg-white text-black px-6 py-3 rounded-xl font-medium hover:opacity-90 transition">
-              Get Started Now
+      {/* CTA Section */}
+      <section className="py-24">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <div className="rounded-3xl p-12 bg-indigo-600 text-white shadow-xl">
+            <h3 className="text-3xl md:text-4xl font-extrabold">
+              Start managing your bookings smarter today
+            </h3>
+            <p className="text-white/90 mt-4 text-lg max-w-2xl mx-auto">
+              Join businesses using BookingManager to streamline appointments and queues.
+            </p>
+            <button className="mt-8 bg-white text-indigo-600 px-8 py-4 rounded-2xl text-lg font-semibold shadow hover:bg-gray-100 transition">
+              Get Started for Free
             </button>
-          </section>
-        </main>
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100 py-10 text-center text-sm text-gray-500 bg-white">
+        © {new Date().getFullYear()} BookingManager. All rights reserved.
+      </footer>
     </div>
   );
 }
 
-function StatCard({ icon, label, value }) {
+function FeatureCard({ icon, title, desc, color }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-5 flex items-center gap-4">
-      <div className="p-3 rounded-xl bg-gray-100">{icon}</div>
-      <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-xl font-semibold">{value}</p>
-      </div>
+    <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition flex flex-col items-center text-center">
+      <div className={`p-4 rounded-2xl text-white mb-4 ${color} shadow`}>{icon}</div>
+      <h4 className="font-semibold text-lg">{title}</h4>
+      <p className="text-gray-600 mt-2 text-sm">{desc}</p>
     </div>
-  );
-}
-
-function Row({ name, service, date, status }) {
-  return (
-    <tr>
-      <td className="py-3">{name}</td>
-      <td className="py-3">{service}</td>
-      <td className="py-3">{date}</td>
-      <td className="py-3">
-        <span className="px-3 py-1 rounded-full text-xs bg-gray-100">
-          {status}
-        </span>
-      </td>
-    </tr>
   );
 }
