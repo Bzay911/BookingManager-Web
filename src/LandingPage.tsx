@@ -1,8 +1,11 @@
 import { Calendar, Users, Bell, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "./components/ui/button";
+import { Card } from "./components/ui/card";
 
-export default function App() {
+export default function LandingPage() {
   const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-indigo-50 text-gray-900">
       {/* Navbar */}
@@ -11,11 +14,12 @@ export default function App() {
           <h1 className="text-2xl font-extrabold text-indigo-600">
             BookingManager
           </h1>
-          <button className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-semibold shadow hover:bg-indigo-700 transition"
-          onClick={() => navigate("/auth")}
+          <Button
+            onClick={() => navigate("/auth")}
+            className="px-5 py-2 font-semibold"
           >
             Get Started
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -25,17 +29,23 @@ export default function App() {
           Manage bookings, queues, and customers in one place.
         </h2>
         <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
-          BookingManager helps local businesses handle appointments, real-time queues, and customer notifications effortlessly.
+          BookingManager helps local businesses handle appointments, real-time
+          queues, and customer notifications effortlessly.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-          <button className="bg-indigo-600 text-white px-7 py-3 rounded-2xl font-semibold shadow hover:bg-indigo-700 transition"
-             onClick={() => navigate("/auth")}
+          <Button
+            onClick={() => navigate("/auth")}
+            className="px-7 py-3 text-lg font-semibold"
           >
             Get Started
-          </button>
-          <button className="border border-gray-200 px-7 py-3 rounded-2xl font-semibold bg-white hover:bg-gray-50 transition">
+          </Button>
+          <Button
+            variant="outline"
+            className="px-7 py-3 text-lg font-semibold"
+            onClick={() => alert("Demo clicked!")}
+          >
             View Demo
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -47,11 +57,12 @@ export default function App() {
               Everything you need to run your bookings
             </h3>
             <p className="text-gray-600 mt-4">
-              From real-time queue tracking to automated notifications, BookingManager simplifies your daily operations.
+              From real-time queue tracking to automated notifications,
+              BookingManager simplifies your daily operations.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <FeatureCard
               icon={<Calendar size={24} />}
               title="Smart Scheduling"
@@ -83,17 +94,21 @@ export default function App() {
       {/* CTA Section */}
       <section className="py-24">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <div className="rounded-3xl p-12 bg-indigo-600 text-white shadow-xl">
+          <Card className="bg-indigo-600 text-white p-12 shadow-xl rounded-3xl text-center">
             <h3 className="text-3xl md:text-4xl font-extrabold">
               Start managing your bookings smarter today
             </h3>
             <p className="text-white/90 mt-4 text-lg max-w-2xl mx-auto">
-              Join businesses using BookingManager to streamline appointments and queues.
+              Join businesses using BookingManager to streamline appointments and
+              queues.
             </p>
-            <button className="mt-8 bg-white text-indigo-600 px-8 py-4 rounded-2xl text-lg font-semibold shadow hover:bg-gray-100 transition">
+            <Button
+              onClick={() => navigate("/auth")}
+              className="mt-8 bg-white text-indigo-600 px-8 py-4 text-lg font-semibold"
+            >
               Get Started for Free
-            </button>
-          </div>
+            </Button>
+          </Card>
         </div>
       </section>
 
@@ -105,12 +120,17 @@ export default function App() {
   );
 }
 
+// Feature Card Component
 function FeatureCard({ icon, title, desc, color }) {
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition flex flex-col items-center text-center">
-      <div className={`p-4 rounded-2xl text-white mb-4 ${color} shadow`}>{icon}</div>
+    <Card
+      className={`flex flex-col items-center text-center cursor-pointer p-6 hover:shadow-lg transition`}
+    >
+      <div className={`p-4 rounded-2xl text-white mb-4 ${color} shadow`}>
+        {icon}
+      </div>
       <h4 className="font-semibold text-lg">{title}</h4>
       <p className="text-gray-600 mt-2 text-sm">{desc}</p>
-    </div>
+    </Card>
   );
 }
