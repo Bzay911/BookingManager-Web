@@ -3,7 +3,7 @@ import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { useAuth } from "../../contexts/Authcontext";
 import { useNavigate } from "react-router-dom";
 
-export default function AuthPage() {
+export default function AuthScreen() {
   const API_URL = import.meta.env.VITE_API_URL;
   const { login } = useAuth();
   const navigate = useNavigate();

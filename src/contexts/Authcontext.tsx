@@ -19,22 +19,22 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('user')
+    const stored = localStorage.getItem('user');
     return stored ? JSON.parse(stored) : null
-  })
+  });
 
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('token')
-  })
+  });
 
   const login = (token: string, user: User) => {
     // Save to localStorage so it persists on refresh
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
     // Update state so all components re-render
-    setToken(token)
-    setUser(user)
-  }
+    setToken(token);
+    setUser(user);
+  };
 
   const logout = () => {
     localStorage.removeItem('token')

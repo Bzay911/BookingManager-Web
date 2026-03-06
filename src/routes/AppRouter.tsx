@@ -2,13 +2,13 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import AuthScreen from '../pages/auth/AuthScreen'
 import Dashboard from '../pages/dashboard/Dashboard'
-import LandingPage from '../LandingPage'
+import RootRoute from './RootRoute';
 
 export const router = createBrowserRouter([
   // Public routes
   {
     path: '/',
-    element: <LandingPage />
+    element: <RootRoute />
   },
   {
     path: '/auth',
