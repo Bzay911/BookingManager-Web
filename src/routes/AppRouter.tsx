@@ -1,8 +1,13 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import AuthScreen from '../pages/auth/AuthScreen'
-import Dashboard from '../pages/dashboard/Dashboard'
 import RootRoute from './RootRoute';
+import DashboardLayout from '../pages/dashboardLayout/DashboardLayout'
+import Dashboard from '../pages/dashboard/Dashboard'
+import QueuePage from '../pages/queue/QueuePage' 
+import SettingsPage from '../pages/settings/SettingsPage'
+import BookingPage from '../pages/booking/BookingPage'
+import AnalyticsPage from '../pages/analytics/AnalyticsPage'
 
 export const router = createBrowserRouter([
   // Public routes
@@ -15,14 +20,36 @@ export const router = createBrowserRouter([
     element: <AuthScreen />
   },
 
-  // Protected routes
+  // Protected routes with Layout
   {
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <Dashboard />
+        <DashboardLayout />
       </ProtectedRoute>
-    )
+    ),
+    children: [
+      {
+        index: true, 
+        element: <Dashboard />
+      },
+      {
+        path: 'queue',
+        element: <QueuePage /> 
+      },
+      {
+        path: 'bookings', 
+        element: <BookingPage /> 
+      },
+      {
+        path: 'analytics', 
+        element: <AnalyticsPage /> 
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage /> 
+      },
+    ]
   },
 
   // 404
