@@ -5,11 +5,13 @@ interface User{
     displayName: string;
     email: string;
     profileImage: string | null;
-    role: 'BUSINESS' | 'CUSTOMER';
+    role: 'BUSINESS' | 'CUSTOMER' | null;
+    isOnboarded: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
+     setUser: (user: User) => void;
     token: string | null;
     login: (token: string, user: User) => void;
     logout: () => void;
@@ -26,6 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('token')
   });
+
+ const updateUser = (updatedUser: User) => {
+  localStorage.setItem('user', JSON.stringify(updatedUser));
+  setUser(updatedUser);
+};
 
   const login = (token: string, user: User) => {
     // Save to localStorage so it persists on refresh
@@ -44,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, setUser: updateUser }}>
       {children}
     </AuthContext.Provider>
   )

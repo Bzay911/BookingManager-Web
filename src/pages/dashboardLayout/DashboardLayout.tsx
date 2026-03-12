@@ -100,7 +100,6 @@ export default function DashboardLayout() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0be48d] to-emerald-400">
                 {user?.displayName?.split(" ")[0] ?? "there"}
               </span>
-              👋
             </h1>
           </div>
           <div className="flex items-center gap-4">

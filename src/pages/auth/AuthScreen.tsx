@@ -27,14 +27,15 @@ export default function AuthScreen() {
         },
         body: JSON.stringify({ 
           token: credentialResponse.credential,
-          role: 'business'      
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
+console.log('received from backend:', data.user);
+login(data.token, data.user);
         login(data.token, data.user);
-        navigate('/dashboard');
+        navigate('/');
         // Note: We don't set isLoading to false here because we want the spinner 
         // to stay visible while the page transitions to the dashboard.
       } else {
