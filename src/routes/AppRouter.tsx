@@ -12,6 +12,7 @@ import OnboardingPage from '../pages/onBoarding/OnboardingPage';
 import BusinessSetupPage from '../pages/businessSetupPage/BusinessSetupPage';
 import BrowsePage from '../pages/customer/BrowsePage';
 import LandingPage from '../LandingPage';
+import OnboardingGuard from './OnboardingGuard';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -62,7 +63,9 @@ export const router = createBrowserRouter([
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <DashboardLayout />
+        <OnboardingGuard>
+          <DashboardLayout />
+        </OnboardingGuard>
       </ProtectedRoute>
     ),
     children: [

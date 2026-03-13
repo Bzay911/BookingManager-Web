@@ -14,9 +14,9 @@ export default function OnboardingGuard({children}: {children: ReactNode}){
     };
 
       // business but setup not done
-  if (user.role === 'BUSINESS' && !user.isOnboarded) {
-    return <Navigate to="/setup-business" replace />;
-  }
+  // if (user.role === 'BUSINESS' && !user.isOnboarded) {
+  //   return <Navigate to="/setup-business" replace />;
+  // }
 
   if(user.role === "CUSTOMER"){
     return <Navigate to="/browse" replace />;

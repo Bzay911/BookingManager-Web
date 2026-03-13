@@ -1,5 +1,17 @@
 import {createContext, useContext, useState, type ReactNode} from "react";
 
+interface Business {
+  id: number;
+  businessName: string;
+  businessAddress: string;
+  businessPhoneNumber: string;
+  businessEmail: string;
+  openingTime: string;
+  closingTime: string;
+  businessProfileImage: string | null;
+  description: string | null;
+}
+
 interface User{
     id: number;
     displayName: string;
@@ -7,6 +19,7 @@ interface User{
     profileImage: string | null;
     role: 'BUSINESS' | 'CUSTOMER' | null;
     isOnboarded: boolean;
+    business: Business | null;
 }
 
 interface AuthContextType {
