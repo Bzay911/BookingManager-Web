@@ -1,43 +1,41 @@
-import { useState } from "react"; // Added useState
+import { useState } from "react"; 
 import { Card } from "../../components/ui/card";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { useAuth } from "../../contexts/Authcontext";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react"; 
+import { Loader2 } from "lucide-react";
 
 export default function AuthScreen() {
   const API_URL = import.meta.env.VITE_API_URL;
   const { login } = useAuth();
   const navigate = useNavigate();
-  
+
+
   // 1. Create the loading state
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return;
-    
+
     // 2. Start the loading indicator
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_URL}/api/auth/google-login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           token: credentialResponse.credential,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-console.log('received from backend:', data.user);
-login(data.token, data.user);
+        console.log("received from backend:", data.user);
         login(data.token, data.user);
-        navigate('/');
-        // Note: We don't set isLoading to false here because we want the spinner 
-        // to stay visible while the page transitions to the dashboard.
+        navigate("/");
       } else {
         console.error("Google login failed");
         setIsLoading(false); // Stop loading if authentication failed
@@ -51,9 +49,8 @@ login(data.token, data.user);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6 relative overflow-hidden font-sans">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0be48d] opacity-[0.07] blur-[100px] rounded-full pointer-events-none"></div>
-      
+
       <Card className="max-w-md w-full p-8 text-center relative z-10 border border-gray-100 shadow-2xl rounded-[2rem] bg-white">
-        
         <h2 className="mb-2 text-black font-extrabold text-2xl md:text-3xl tracking-tight">
           Welcome back
         </h2>
@@ -79,7 +76,7 @@ login(data.token, data.user);
             />
           )}
         </div>
-        
+
         <p className="mt-6 text-xs text-gray-400">
           By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>

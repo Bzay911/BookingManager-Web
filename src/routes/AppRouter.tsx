@@ -13,6 +13,9 @@ import BusinessSetupPage from '../pages/businessSetupPage/BusinessSetupPage';
 import BrowsePage from '../pages/customer/BrowsePage';
 import LandingPage from '../LandingPage';
 import OnboardingGuard from './OnboardingGuard';
+import BusinesDetailsPage from '../pages/customer/BusinessDetailsPage';
+import DashboardGuard from './DashboardGuard';
+import BusinessSetupGuard from './BusinessSetupGuard';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -35,7 +38,9 @@ export const router = createBrowserRouter([
     path: '/onboarding',
     element: (
       <ProtectedRoute>
+        <OnboardingGuard>
         <OnboardingPage />
+        </OnboardingGuard>
       </ProtectedRoute>
     )
   },
@@ -45,7 +50,9 @@ export const router = createBrowserRouter([
     path: '/setup-business',
     element: (
       <ProtectedRoute>
-        <BusinessSetupPage />
+        <BusinessSetupGuard>
+          <BusinessSetupPage />
+        </BusinessSetupGuard>
       </ProtectedRoute>
     )
   },
@@ -59,13 +66,22 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     )
   },
+
+{
+  path: '/business/:id',
+  element:(
+    <ProtectedRoute>
+      <BusinesDetailsPage />
+    </ProtectedRoute>
+  )
+},
   {
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <OnboardingGuard>
+        <DashboardGuard>
           <DashboardLayout />
-        </OnboardingGuard>
+        </DashboardGuard>
       </ProtectedRoute>
     ),
     children: [

@@ -8,9 +8,11 @@ export default function RootRoute() {
 
   if (!user.role) return <Navigate to="/onboarding" replace />;
 
-  if(user.role === "BUSINESS"){
-    return <Navigate to="/dashboard" replace />;
-  }
+ if (user.role === "BUSINESS") {
+  return user.isOnBoarded 
+    ? <Navigate to="/dashboard" replace />
+    : <Navigate to="/setup-business" replace />;
+}
 
   if (user.role === 'CUSTOMER') {
     return <Navigate to="/browse" replace />;

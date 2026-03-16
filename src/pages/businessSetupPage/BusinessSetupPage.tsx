@@ -30,8 +30,8 @@ interface Service {
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SetupBusinessPage() {
-    const navigate = useNavigate();
-  const { token, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user, token, logout, setUser } = useAuth();
 
   // Loading States
   const [loading, setLoading] = useState(false);
@@ -133,7 +133,7 @@ export default function SetupBusinessPage() {
         }),
       });
       const otpData = await otpResponse.json();
-      
+
       console.log("OTP data:", otpData);
 
       if (!otpResponse.ok || !otpData.success) {
@@ -141,7 +141,6 @@ export default function SetupBusinessPage() {
         setVerifying(false);
         return;
       }
-
 
       const response = await fetch(`${API_URL}/api/business/setup-business`, {
         method: "POST",
@@ -163,6 +162,7 @@ export default function SetupBusinessPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        setUser({ ...user!, isOnboarded: true });
         console.log("Business setup successful:", data);
         setShowVerification(false);
         alert("Your business has been set up successfully!");
@@ -171,9 +171,9 @@ export default function SetupBusinessPage() {
     } catch (error) {
       console.error("Error verifying OTP:", error);
       alert("There was an error verifying the OTP. Please try again.");
-    }finally {
+    } finally {
       setVerifying(false);
-    };
+    }
   };
 
   const isFormValid =

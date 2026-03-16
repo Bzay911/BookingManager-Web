@@ -5,6 +5,7 @@ import {
   LogOut, Search, MapPin, Clock, ChevronRight, 
   Store, Loader2, AlertCircle 
 } from "lucide-react";
+import {Link} from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -21,8 +22,6 @@ const fetchBusinesses = async (token: string | null) => {
     if (!response.ok) {
         throw new Error('Failed to fetch businesses');
     }
-    // Assuming the API returns the array directly, or inside a data object. 
-    // Adjust this if your backend wraps it like { businesses: [...] }
     const data = await response.json();
     return data.businesses || data; 
 };
@@ -42,7 +41,6 @@ export default function BrowsePage() {
       b.businessAddress.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-    // --- LOADING STATE ---
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center font-sans">
@@ -184,9 +182,12 @@ export default function BrowsePage() {
                                         {business.openingTime} - {business.closingTime}
                                     </div>
                                     
-                                    <button className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center group-hover:bg-[#0be48d] group-hover:text-black transition-colors shadow-md">
-                                        <ChevronRight size={20} />
-                                    </button>
+                                   <Link 
+  to={`/business/${business.id}`} 
+  className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center group-hover:bg-[#0be48d] group-hover:text-black transition-colors shadow-md"
+>
+    <ChevronRight size={20} />
+</Link>
                                 </div>
                             </div>
                         ))}
