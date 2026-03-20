@@ -63,7 +63,10 @@ export default function LandingPage() {
             <h1 className="text-xl font-bold tracking-tight">BookingManager</h1>
           </div>
           <div className="flex items-center gap-4">
-            <button className="text-sm font-medium text-gray-600 hover:text-black hidden sm:block">Log in</button>
+            <button 
+              onClick={() => {
+              navigate("/browse")}}
+            className="text-sm font-medium text-gray-600 hover:text-black hidden sm:block">Browse Businesses</button>
             <Button
               onClick={() => navigate("/auth")}
               className="bg-black text-white rounded-full transition-colors duration-200 hover:bg-[#0be48d] hover:text-black"
@@ -99,18 +102,16 @@ export default function LandingPage() {
             onClick={() => navigate("/auth")}
             className="bg-black text-white rounded-full px-7 py-6 text-base transition-colors duration-200 hover:bg-[#0be48d] hover:text-black shadow-lg hover:shadow-xl w-full sm:w-auto"
           >
-            Start for free today
+            Register your business
             <ArrowRight className="ml-2 w-4 h-4" />
           </Button>
 
           <Button
             variant="outline"
-            onClick={() => {
-              navigate("/browse")}}
             className="rounded-full px-8 py-6 text-base font-medium border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Play size={18} className="fill-current" />
-            Browse
+            See how it works
           </Button>
         </div>
 

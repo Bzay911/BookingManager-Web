@@ -5,9 +5,7 @@ import RootRoute from './RootRoute';
 import DashboardLayout from '../pages/dashboardLayout/DashboardLayout';
 import Dashboard from '../pages/dashboard/Dashboard';
 import QueuePage from '../pages/queue/QueuePage';
-import SettingsPage from '../pages/settings/SettingsPage';
 import BookingPage from '../pages/booking/BookingPage';
-import AnalyticsPage from '../pages/analytics/AnalyticsPage';
 import OnboardingPage from '../pages/onBoarding/OnboardingPage';
 import BusinessSetupPage from '../pages/businessSetupPage/BusinessSetupPage';
 import BrowsePage from '../pages/customer/BrowsePage';
@@ -16,6 +14,7 @@ import OnboardingGuard from './OnboardingGuard';
 import BusinesDetailsPage from '../pages/customer/BusinessDetailsPage';
 import DashboardGuard from './DashboardGuard';
 import BusinessSetupGuard from './BusinessSetupGuard';
+import BusinessPage from '../pages/analytics/BusinessPage';
 
 export const router = createBrowserRouter([
   // Public routes
@@ -98,12 +97,8 @@ export const router = createBrowserRouter([
         element: <BookingPage /> 
       },
       {
-        path: 'analytics', 
-        element: <AnalyticsPage /> 
-      },
-      {
-        path: 'settings',
-        element: <SettingsPage /> 
+        path: 'business', 
+        element: <BusinessPage /> 
       },
     ]
   },

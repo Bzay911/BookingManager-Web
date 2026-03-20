@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from "../../contexts/Authcontext";
 import { 
-  LogOut, Search, MapPin, Clock, ChevronRight, 
-  Store, Loader2, AlertCircle, LayoutGrid, 
-  CalendarCheck, UserCircle, Bell
+  Search, MapPin, Clock, Store, Loader2, 
+  ChevronRight, SlidersHorizontal 
 } from "lucide-react";
-import { Link, NavLink } from 'react-router-dom';
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
+import { Link } from 'react-router-dom';
 import { Badge } from "../../components/ui/badge";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -26,160 +24,184 @@ const fetchBusinesses = async (token: string | null) => {
     return data.businesses || data; 
 };
 
-// Updated Navigation Items for Customer View
-const navItems = [
-  { icon: LayoutGrid, label: "Browse All", path: "/browse" },
-  { icon: CalendarCheck, label: "Your Bookings", path: "/bookings" },
-  { icon: UserCircle, label: "Profile", path: "/profile" },
-];
+// Standard booking categories
+const categories = ["All Services", "Barber", "Mechanic", "Beauty", "Health", "Automotive", "Cleaning"];
 
 export default function BrowsePage() {
-    const { user, logout, token } = useAuth();
+    const { token } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeCategory, setActiveCategory] = useState("All Services");
 
-    const { data: businesses, isLoading, isError } = useQuery({
-        queryKey: ['businesses'],
-        queryFn: () => fetchBusinesses(token)
+    const { data: businesses, isLoading } = useQuery({
+        queryKey: ['businesses', token],
+        queryFn: () => fetchBusinesses(token),
+        enabled: !!token
     });
 
-    const initials = user?.displayName
-        ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-        : "CU";
+    // Memoized filtering logic for performance
+    const filteredBusinesses = useMemo(() => {
+        if (!businesses) return [];
+        
+        return businesses.filter((b: any) => {
+            const matchesSearch = 
+                b.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                b.businessAddress.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const matchesCategory = 
+                activeCategory === "All Services" || 
+                b.category?.toLowerCase() === activeCategory.toLowerCase();
 
-    const filteredBusinesses = businesses?.filter((b: any) => 
-      b.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      b.businessAddress.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
+            return matchesSearch && matchesCategory;
+        });
+    }, [businesses, searchQuery, activeCategory]);
 
     if (isLoading) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
                 <Loader2 size={40} className="text-[#0be48d] animate-spin mb-4" />
-                <p className="font-bold text-gray-500">Loading marketplace...</p>
+                <p className="font-bold text-gray-400 tracking-tight">Loading BookingManager...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-            {/* Sidebar Navigation */}
-            <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col py-6 px-4 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center gap-3 px-2 mb-10 mt-2">
-                    <div className="w-9 h-9 bg-[#0be48d] rounded-xl flex items-center justify-center shadow-md shadow-[#0be48d]/20">
-                        <Store size={18} className="text-white" />
-                    </div>
-                    <span className="font-extrabold text-black text-lg tracking-tight">BookingManager</span>
-                </div>
-
-                <nav className="flex-1 flex flex-col gap-2">
-                    {navItems.map(({ icon: Icon, label, path }) => (
-                        <NavLink
-                            key={label}
-                            to={path}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm transition-all duration-200 ${
-                                    isActive
-                                        ? "bg-gray-100 text-black shadow-sm"
-                                        : "text-gray-500 hover:text-black hover:bg-gray-50"
-                                }`
-                            }
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <Icon size={16} />
-                                    {label}
-                                    {isActive && <ChevronRight size={14} className="ml-auto opacity-40" />}
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
-
-                {/* User Profile Section at Bottom */}
-                <div className="border-t border-gray-100 pt-4 mt-4">
-                    <div className="flex items-center gap-3 px-2 py-2">
-                        <Avatar className="w-9 h-9 border border-gray-100 shadow-sm">
-                            <AvatarImage src={user?.profileImage} />
-                            <AvatarFallback className="bg-black text-white text-xs">{initials}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-black truncate">{user?.displayName || "Guest"}</p>
-                            <p className="text-[10px] text-gray-400 font-bold tracking-wider truncate">{user?.email}</p>
-                        </div>
-                        <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
-                            <LogOut size={16} />
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto relative flex flex-col">
-                {/* <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0be48d] opacity-[0.03] blur-[100px] rounded-full pointer-events-none -z-10"></div> */}
-
-                {/* Header */}
-                <header className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-md border-b border-gray-100 px-10 py-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-black tracking-tight">Browse All</h1>
-                        <p className="text-sm text-gray-500 font-medium">Find and book local services instantly</p>
-                    </div>
+        <div className="min-h-screen bg-white font-sans text-slate-900">
+            {/* --- HEADER NAVIGATION --- */}
+            <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
                     
-                    <div className="flex items-center gap-4">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    {/* Brand Logo */}
+                    <Link to="/" className="flex items-center gap-2.5 shrink-0">
+                        <div className="w-9 h-9 bg-[#0be48d] rounded-xl flex items-center justify-center shadow-sm">
+                            <Store size={20} className="text-white" />
+                        </div>
+                        <span className="font-black text-xl tracking-tighter">BookingManager</span>
+                    </Link>
+
+                    {/* Right Aligned Search Bar */}
+                    <div className="flex-1 flex justify-end">
+                        <div className="relative w-full max-w-sm group">
+                            <Search 
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#0be48d] transition-colors" 
+                                size={18} 
+                            />
                             <input 
                                 type="text"
-                                placeholder="Search businesses..."
+                                placeholder="Search services or locations..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0be48d]/20 focus:border-[#0be48d] transition-all w-64"
+                                className="w-full pl-12 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0be48d]/10 focus:border-[#0be48d] transition-all"
                             />
+                            <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
+                                <SlidersHorizontal size={16} />
+                            </button>
                         </div>
                     </div>
-                </header>
+                </div>
+            </header>
 
-                {/* Content Grid */}
-                <div className="p-10">
-                    {filteredBusinesses.length === 0 ? (
-                        <div className="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-sm">
-                            <Search size={48} className="text-gray-200 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-black">No results found</h3>
-                            <p className="text-gray-500">Try searching for something else.</p>
+            {/* --- CENTERED CHIPS --- */}
+            <div className="sticky top-20 z-40 bg-white border-b border-gray-50 py-4">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex items-center justify-center gap-3 overflow-x-auto no-scrollbar">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-6 py-2 rounded-full text-xs font-bold transition-all duration-200 whitespace-nowrap ${
+                                    activeCategory === cat 
+                                    ? "bg-black text-white shadow-lg scale-105" 
+                                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-black"
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* --- MAIN GRID --- */}
+            <main className="max-w-7xl mx-auto px-6 py-12">
+                {/* Section Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                    <div>
+                        <h2 className="text-3xl font-black tracking-tight">Discover</h2>
+                        <p className="text-gray-400 text-sm font-medium mt-1">
+                            Showing {filteredBusinesses.length} results for {activeCategory}
+                        </p>
+                    </div>
+                </div>
+
+                {filteredBusinesses.length === 0 ? (
+                    <div className="py-24 text-center bg-gray-50 rounded-[40px] border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                            <Search size={24} className="text-gray-300" />
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {filteredBusinesses.map((business: any) => (
-                                <div key={business.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                                            <Store size={24} color="black" />
-                                        </div>
-                                        <Badge className="bg-emerald-50 text-emerald-600 border-none hover:bg-emerald-100">Open</Badge>
+                        <h3 className="text-xl font-bold text-gray-900">No matches found</h3>
+                        <p className="text-gray-500 text-sm mt-1">Try searching for a different keyword or category.</p>
+                        <button 
+                            onClick={() => {setSearchQuery(""); setActiveCategory("All Services");}}
+                            className="mt-6 text-sm font-bold text-[#0be48d] hover:underline"
+                        >
+                            Clear all filters
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+                        {filteredBusinesses.map((business: any) => (
+                            <Link 
+                                key={business.id} 
+                                to={`/business/${business.id}`}
+                                className="group cursor-pointer"
+                            >
+                                {/* Card Image Container */}
+                                <div className="relative aspect-[1.1] rounded-[32px] bg-slate-100 overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-500">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                                        <Store size={48} className="text-slate-200 group-hover:scale-110 transition-transform duration-700 ease-out" />
                                     </div>
                                     
-                                    <h3 className="text-lg font-bold text-black mb-1">{business.businessName}</h3>
-                                    <div className="flex items-center gap-1.5 text-gray-400 text-sm mb-4">
-                                        <MapPin size={14} />
+                                    {/* Status Badge Overlay */}
+                                    <div className="absolute top-4 left-4">
+                                        <Badge className="bg-white/90 backdrop-blur-md text-emerald-600 border-none font-bold text-[10px] px-2.5 py-1 rounded-lg">
+                                            OPEN NOW
+                                        </Badge>
+                                    </div>
+                                </div>
+                                
+                                {/* Card Text Content */}
+                                <div className="px-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <h3 className="font-bold text-[17px] leading-tight group-hover:text-[#0be48d] transition-colors line-clamp-1">
+                                            {business.businessName}
+                                        </h3>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <span className="text-xs font-bold">4.8</span>
+                                            <span className="text-yellow-400">★</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-1.5 text-gray-400 text-sm mt-1 mb-3">
+                                        <MapPin size={14} className="shrink-0" />
                                         <span className="truncate">{business.businessAddress}</span>
                                     </div>
 
-                                    <div className="pt-5 border-t border-gray-50 flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                                            <Clock size={14} />
-                                            {business.openingTime} - {business.closingTime}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl">
+                                            <Clock size={13} className="text-[#0be48d]" />
+                                            <span className="text-[11px] font-bold text-slate-600">
+                                                {business.openingTime} - {business.closingTime}
+                                            </span>
                                         </div>
-                                        <Link 
-                                            to={`/business/${business.id}`} 
-                                            className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center group-hover:bg-[#0be48d] group-hover:text-black transition-all shadow-md"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </Link>
+                                        <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all">
+                                            <ChevronRight size={16} />
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </main>
         </div>
     );

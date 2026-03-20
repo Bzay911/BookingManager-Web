@@ -11,8 +11,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Users, label: "Queue", path: "/dashboard/queue" },
   { icon: CalendarClock, label: "Bookings", path: "/dashboard/bookings" },
-  { icon: ClipboardList, label: "Analytics", path: "/dashboard/analytics" },
-  { icon: Settings, label: "Settings", path: "/dashboard/settings" },
+  { icon: ClipboardList, label: "Your Business", path: "/dashboard/business" },
 ];
 
 export default function DashboardLayout() {
@@ -92,12 +91,9 @@ export default function DashboardLayout() {
         {/* Universal Top Bar */}
         <header className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-md border-b border-gray-100 px-10 py-5 flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 tracking-wider mb-1">
-              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-            </p>
-            <h1 className="text-2xl font-semibold text-black tracking-tight">
+            <h1 className="text-lg font-medium text-black tracking-tight">
               Welcome back,{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0be48d] to-emerald-400">
+              <span className="text-black font-bold">
                 {user?.displayName?.split(" ")[0] ?? "there"}
               </span>
             </h1>

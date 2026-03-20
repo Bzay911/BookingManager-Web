@@ -55,7 +55,7 @@ export default function AuthScreen() {
           Welcome back
         </h2>
         <p className="mb-6 text-gray-500 text-base">
-          Sign in or create your account to continue.
+          Sign in or create your account to continue as a business.
         </p>
 
         {/* 3. Conditionally render either the spinner or the Google button */}

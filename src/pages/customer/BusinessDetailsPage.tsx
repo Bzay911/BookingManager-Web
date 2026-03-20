@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../contexts/Authcontext";
 import {
@@ -8,22 +8,14 @@ import {
   Phone,
   Store,
   Loader2,
-  LogOut,
   DollarSign,
   Timer,
-  LayoutGrid,
   AlertCircle,
-  CalendarCheck,
-  UserCircle,
   Image as ImageIcon,
+  MessageCircle
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "../../components/ui/avatar";
+import { Badge } from "../../components/ui/badge";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -41,16 +33,10 @@ const fetchBusinessDetails = async (id: string, token: string | null) => {
   return response.json();
 };
 
-const navItems = [
-  { icon: LayoutGrid, label: "Browse All", path: "/browse" },
-  { icon: CalendarCheck, label: "Your Bookings", path: "/bookings" },
-  { icon: UserCircle, label: "Profile", path: "/profile" },
-];
-
 export default function BusinessDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, token, logout } = useAuth();
+  const { token } = useAuth();
 
   const {
     data: business,
@@ -62,211 +48,176 @@ export default function BusinessDetailsPage() {
     enabled: !!id,
   });
 
-  const initials =
-    user?.displayName
-      ?.split(" ")
-      .map((n: string) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "CU";
+  const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(
+    `Hi! I'd like to book an appointment at ${business?.businessName}. (Ref: ${business?.id})`
+  )}`;
 
   if (isLoading)
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-50">
-        <Loader2 size={40} className="text-[#0be48d] animate-spin" />
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
+        <Loader2 size={32} className="text-[#0be48d] animate-spin mb-4" />
+        <p className="text-sm text-gray-500 font-medium">Loading details...</p>
       </div>
     );
 
   if (isError)
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-gray-50">
-        <AlertCircle size={40} className="text-red-500" />
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
+        <AlertCircle size={32} className="text-red-500 mb-4" />
+        <p className="font-semibold text-gray-900">Unable to load business</p>
+        <button onClick={() => navigate('/browse')} className="mt-4 text-sm text-[#0be48d] font-semibold hover:underline">
+          Return to Browse
+        </button>
       </div>
     );
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden font-sans">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col py-6 px-4 z-20">
-        <div className="flex items-center gap-3 px-2 mb-10 mt-2">
-          <div className="w-9 h-9 bg-[#0be48d] rounded-xl flex items-center justify-center shadow-md shadow-[#0be48d]/20 text-white">
-            <Store size={18} />
-          </div>
-          <span className="font-extrabold text-black text-lg tracking-tight">
-            BookingManager
-          </span>
+    <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-[#0be48d]/20">
+      {/* --- REFINED HEADER --- */}
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link to="/browse" className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 bg-[#0be48d] rounded-lg flex items-center justify-center shadow-sm">
+              <Store size={18} className="text-white" />
+            </div>
+            <span className="font-bold text-lg tracking-tight text-slate-900">BookingManager</span>
+          </Link>
         </div>
-        <nav className="flex-1 flex flex-col gap-2">
-          {navItems.map(({ icon: Icon, label, path }) => (
-            <NavLink
-              key={label}
-              to={path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all ${isActive ? "bg-gray-100 text-black shadow-sm" : "text-gray-500 hover:text-black hover:bg-gray-50"}`
-              }
-            >
-              <Icon size={18} /> {label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="border-t border-gray-100 pt-4 mt-4 flex items-center gap-3 px-2">
-          <Avatar className="w-9 h-9 border border-gray-100 shadow-sm">
-            <AvatarImage src={user?.profileImage} />
-            <AvatarFallback className="bg-black text-white text-xs">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-black truncate">
-              {user?.displayName || "Guest"}
-            </p>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Navigation Breadcrumb */}
+        <button
+          onClick={() => navigate(-1)}
+          className="group flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors mb-8"
+        >
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+          Back to Browse
+        </button>
+
+        {/* Business Hero Info */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-3">
+              <Badge className="bg-slate-100 text-slate-600 border-none px-2.5 py-0.5 font-semibold text-[10px] tracking-wide">
+                Verified Business
+              </Badge>
+              <div className="flex items-center gap-1 text-sm font-medium text-slate-600">
+                  <span className="text-yellow-400">★</span> 4.9
+              </div>
           </div>
-          <button
-            onClick={logout}
-            className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors"
-          >
-            <LogOut size={16} />
-          </button>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+            {business?.businessName}
+          </h1>
+          <div className="flex items-center gap-2 text-slate-500 mt-3 text-sm">
+            <MapPin size={16} className="text-[#0be48d]" />
+            <span className="font-medium">{business?.businessAddress}</span>
+          </div>
         </div>
-      </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-8 py-10">
-          {/* Header Section */}
-          <div className="mb-8">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-black transition-colors mb-4"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <h1 className="text-4xl font-extrabold text-black tracking-tight mb-2">
-              {business?.businessName}
-            </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1.5 font-medium">
-                <MapPin size={16} />
-                {business?.businessAddress}
-              </div>
-              <span className="text-blue-500 font-semibold cursor-pointer hover:underline">
-                Show on map
-              </span>
-            </div>
+        {/* Professional Gallery Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-auto md:h-[480px] mb-12 rounded-2xl overflow-hidden border border-slate-100">
+          <div className="md:col-span-2 md:row-span-2 bg-slate-50 flex items-center justify-center border-r border-slate-100 group relative">
+            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={48} />
           </div>
-
-          {/* Image Gallery Bento Grid (Placeholder Style) */}
-          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[500px] mb-12 rounded-3xl overflow-hidden">
-            {/* Main Large Image */}
-            <div className="col-span-2 row-span-2 bg-gray-100 flex items-center justify-center border border-gray-200 group relative cursor-pointer">
-              <ImageIcon className="text-gray-300" size={48} />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all" />
-            </div>
-            {/* Top Side Image */}
-            <div className="col-span-2 row-span-1 bg-gray-100 flex items-center justify-center border border-gray-200 group relative cursor-pointer">
-              <ImageIcon className="text-gray-300" size={32} />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all" />
-            </div>
-            {/* Bottom Right 1 */}
-            <div className="col-span-1 row-span-1 bg-gray-100 flex items-center justify-center border border-gray-200 group relative cursor-pointer">
-              <ImageIcon className="text-gray-300" size={24} />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all" />
-            </div>
-            {/* Bottom Right 2 with "More Photos" logic */}
-            <div className="col-span-1 row-span-1 bg-gray-100 flex items-center justify-center border border-gray-200 group relative cursor-pointer">
-              <div className="text-center">
-                <p className="font-bold text-gray-400">+12 photos</p>
-              </div>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all" />
-            </div>
+          <div className="md:col-span-2 md:row-span-1 bg-slate-50 flex items-center justify-center border-b border-slate-100 group relative">
+            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={32} />
           </div>
+          <div className="md:col-span-1 md:row-span-1 bg-slate-50 flex items-center justify-center border-r border-slate-100 group relative">
+            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={24} />
+          </div>
+          <div className="md:col-span-1 md:row-span-1 bg-slate-100 flex items-center justify-center group relative">
+             <div className="text-center">
+                <p className="font-bold text-slate-600 text-sm">View All</p>
+                <p className="text-[10px] text-slate-400 font-medium uppercase">12+ Photos</p>
+             </div>
+          </div>
+        </div>
 
-          {/* Business Info & Services */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-2">
-              <section className="mb-10">
-                <h2 className="text-2xl font-bold text-black mb-4">
-                  About this business
-                </h2>
-                <p className="text-gray-600 leading-relaxed font-medium">
-                  {business?.description ||
-                    "A premier destination for quality service and professional care. We specialize in providing a seamless experience for all our clients."}
-                </p>
-              </section>
+        {/* Main Content Split */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20">
+          <div className="lg:col-span-7">
+            {/* About Section */}
+            <section className="mb-12">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">
+                Description
+              </h2>
+              <p className="text-slate-500 leading-relaxed text-base font-medium">
+                {business?.description ||
+                  "A premier destination for quality service and professional care. We specialize in providing a seamless experience for all our clients."}
+              </p>
+            </section>
 
-              <section>
-                <h2 className="text-2xl font-bold text-black mb-6">
-                  Available Services
-                </h2>
-                <div className="grid grid-cols-1 gap-4">
-                  {business?.services?.map((service: any) => (
-                    <div
-                      key={service.id}
-                      className="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-3xl hover:border-[#0be48d]/40 transition-all shadow-sm group"
-                    >
-                      <div>
-                        <h3 className="font-bold text-lg text-black">
-                          {service.service}
-                        </h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="text-sm font-bold text-gray-400 flex items-center gap-1">
-                            <Timer size={14} /> {service.durationMinutes} mins
-                          </span>
-                          <span className="text-[#0be48d] font-bold text-sm flex items-center gap-1">
-                            <DollarSign size={14} /> {service.price}
-                          </span>
-                        </div>
+            {/* Services List (No "Book Now" Button) */}
+            <section>
+              <h2 className="text-xl font-bold text-slate-900 mb-6">
+                Services & Pricing
+              </h2>
+              <div className="space-y-3">
+                {business?.services?.map((service: any) => (
+                  <div
+                    key={service.id}
+                    className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-xl hover:border-slate-200 hover:bg-slate-50/50 transition-all group"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-slate-900 group-hover:text-[#0be48d] transition-colors">
+                        {service.service}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-1.5">
+                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                          <Timer size={14} className="text-slate-300" /> {service.durationMinutes} mins
+                        </span>
                       </div>
-                      <button className="px-6 py-3 rounded-2xl bg-black text-white text-sm font-bold group-hover:bg-[#0be48d] group-hover:text-black transition-all">
-                        Book Now
-                      </button>
                     </div>
-                  ))}
-                </div>
-              </section>
-            </div>
+                    <div className="text-right">
+                        <span className="text-slate-900 font-bold text-lg flex items-center gap-0.5 justify-end">
+                          <DollarSign size={16} /> {service.price}
+                        </span>
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-tight">Available</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
 
-            {/* Sticky Sidebar (QR & Contact) */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100">
-                <h3 className="text-xl font-bold text-black mb-4 text-center">
-                  Instant WhatsApp Booking
-                </h3>
-                <div className="bg-white p-4 rounded-3xl shadow-inner border border-gray-100 flex justify-center mb-6">
-                  <QRCodeSVG
-                    value={`https://wa.me/14155238886?text=${encodeURIComponent(
-                      `BUSINESS:${business.id} Hi! I'd like to book an appointment at ${business.businessName}`,
-                    )}`}
-                    size={180}
-                  />
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-50">
-                    <Clock size={18} className="text-[#0be48d]" />
+          {/* WhatsApp Booking Sidebar */}
+          <div className="lg:col-span-5">
+            <div className="sticky top-28 p-8 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
+                <MessageCircle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-1 text-center">
+                Book via WhatsApp
+              </h3>
+              <p className="text-xs font-medium text-slate-400 mb-8 text-center px-4">
+                We accept bookings exclusively through WhatsApp. Scan the code to start.
+              </p>
+              
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-center mb-8">
+                <QRCodeSVG
+                  value={whatsappUrl}
+                  size={180}
+                  level="M"
+                  includeMargin={true}
+                />
+              </div>
+
+              <div className="w-full space-y-3">
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-100">
+                    <Clock size={18} className="text-slate-400" />
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase">
-                        Hours
-                      </p>
-                      <p className="text-sm font-bold">
-                        {business?.openingTime} - {business?.closingTime}
-                      </p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">Operating Hours</p>
+                        <p className="text-sm font-semibold text-slate-700">{business?.openingTime} - {business?.closingTime}</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-50">
-                    <Phone size={18} className="text-[#0be48d]" />
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase">
-                        Phone
-                      </p>
-                      <p className="text-sm font-bold">
-                        {business?.businessPhoneNumber}
-                      </p>
-                    </div>
-                  </div>
                 </div>
-                <p className="text-[11px] text-gray-400 text-center mt-6 font-medium uppercase tracking-widest">
-                  Powered by BookingManager AI
-                </p>
+
+                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-100">
+                    <Phone size={18} className="text-slate-400" />
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">Contact Support</p>
+                        <p className="text-sm font-semibold text-slate-700">{business?.businessPhoneNumber}</p>
+                    </div>
+                </div>
               </div>
             </div>
           </div>
