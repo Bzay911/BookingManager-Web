@@ -14,7 +14,7 @@ export default function RootRoute() {
     : <Navigate to="/setup-business" replace />;
 }
 
-  if (user.role === 'CUSTOMER') {
-    return <Navigate to="/browse" replace />;
-  }
+  // if (user.role === 'CUSTOMER') {
+  //   return <Navigate to="/browse" replace />;
+  // }
 }

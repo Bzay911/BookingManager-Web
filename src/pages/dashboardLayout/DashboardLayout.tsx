@@ -4,7 +4,7 @@ import { Badge } from "../../components/ui/badge";
 import { useAuth } from "../../contexts/Authcontext";
 import {
   Users, CalendarClock, Settings, LayoutDashboard,
-  ClipboardList, LogOut, ChevronRight, Bell, Calendar
+  ClipboardList, LogOut, ChevronRight, Calendar
 } from "lucide-react";
 
 const navItems = [
@@ -25,7 +25,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col py-6 px-4 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col py-6 px-4 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-3 px-2 mb-10 mt-2">
           <div className="w-9 h-9 bg-[#0be48d] rounded-xl flex items-center justify-center shadow-md shadow-[#0be48d]/20">
             <Calendar size={18} className="text-white" />
@@ -39,9 +39,9 @@ export default function DashboardLayout() {
             <NavLink
               key={label}
               to={path}
-              end={path === "/dashboard"} // Ensures exact matching for the root dashboard
+              end={path === "/dashboard"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm transition-all duration-200 ${
                   isActive
                     ? "bg-gray-100 text-black shadow-sm"
                     : "text-gray-500 hover:text-black hover:bg-gray-50"
@@ -50,7 +50,7 @@ export default function DashboardLayout() {
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={isActive ? "text-[#0be48d]" : ""} />
+                  <Icon size={16}/>
                   {label}
                   {isActive && <ChevronRight size={14} className="ml-auto opacity-40" />}
                 </>
@@ -62,14 +62,14 @@ export default function DashboardLayout() {
         {/* User profile */}
         <div className="border-t border-gray-100 pt-4 mt-4">
           <div className="flex items-center gap-3 px-2 py-2">
-            <Avatar className="w-9 h-9 border border-gray-100 shadow-sm">
+            <Avatar className="w-8 h-8 border border-gray-100 shadow-sm">
               <AvatarImage src={user?.profileImage ?? undefined} />
-              <AvatarFallback className="bg-black text-white text-xs font-bold">
+              <AvatarFallback className="bg-black text-white text-xs">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-black truncate">
+              <p className="text-xs font-bold text-black truncate">
                 {user?.displayName ?? "Business Owner"}
               </p>
               <p className="text-xs text-gray-400 truncate">{user?.email ?? "Pro Account"}</p>
@@ -92,10 +92,10 @@ export default function DashboardLayout() {
         {/* Universal Top Bar */}
         <header className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-md border-b border-gray-100 px-10 py-5 flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
+            <p className="text-xs text-gray-400 tracking-wider mb-1">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </p>
-            <h1 className="text-2xl font-extrabold text-black tracking-tight">
+            <h1 className="text-2xl font-semibold text-black tracking-tight">
               Welcome back,{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0be48d] to-emerald-400">
                 {user?.displayName?.split(" ")[0] ?? "there"}
@@ -103,18 +103,12 @@ export default function DashboardLayout() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Badge className="bg-white text-black border border-gray-200 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm">
+            <Badge className="bg-white text-black border border-gray-200 text-xs px-3 py-1.5 rounded-full shadow-sm">
               {user?.role === "BUSINESS" ? "Business" : "Customer"}
             </Badge>
-            <button className="relative w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 shadow-sm transition-all">
-              <Bell size={18} />
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#0be48d] border-2 border-white" />
-            </button>
           </div>
         </header>
 
-        {/* THIS IS THE MAGIC PART */}
-        {/* The Outlet renders whatever page component matches the current URL */}
         <div className="flex-1 p-10">
           <Outlet />
         </div>

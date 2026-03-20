@@ -61,18 +61,18 @@ export const router = createBrowserRouter([
     {
     path: '/browse',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <BrowsePage />
-      </ProtectedRoute>
+      // </ProtectedRoute>
     )
   },
 
 {
   path: '/business/:id',
   element:(
-    <ProtectedRoute>
+    // <ProtectedRoute>
       <BusinesDetailsPage />
-    </ProtectedRoute>
+    // </ProtectedRoute>
   )
 },
   {

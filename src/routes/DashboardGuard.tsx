@@ -8,6 +8,6 @@ export default function DashboardGuard({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/" replace />;
   if (!user.role) return <Navigate to="/onboarding" replace />;
   if (user.role === 'BUSINESS' && !user.isOnBoarded) return <Navigate to="/setup-business" replace />;
-  if (user.role === 'CUSTOMER') return <Navigate to="/browse" replace />;
+  // if (user.role === 'CUSTOMER') return <Navigate to="/browse" replace />;
   return <>{children}</>;
 }

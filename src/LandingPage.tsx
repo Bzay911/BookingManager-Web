@@ -105,10 +105,12 @@ export default function LandingPage() {
 
           <Button
             variant="outline"
+            onClick={() => {
+              navigate("/browse")}}
             className="rounded-full px-8 py-6 text-base font-medium border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Play size={18} className="fill-current" />
-            See how it works
+            Browse
           </Button>
         </div>
 
