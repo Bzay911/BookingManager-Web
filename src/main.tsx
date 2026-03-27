@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "@fontsource/geist-sans/index.css";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/AppRouter.tsx";
 import { GoogleOAuthProvider } from '@react-oauth/google';

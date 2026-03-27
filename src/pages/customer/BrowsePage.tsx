@@ -10,17 +10,18 @@ import { Badge } from "../../components/ui/badge";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const fetchBusinesses = async (token: string | null) => {
+const fetchBusinesses = async () => {
+    console.log('fetch ran!!');
     const response = await fetch(`${API_BASE_URL}/api/business/get-all-businesses`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
         }
     });
     
     if (!response.ok) throw new Error('Failed to fetch businesses');
     const data = await response.json();
+    console.log('data from the backend on browsing', data);
     return data.businesses || data; 
 };
 
@@ -28,16 +29,17 @@ const fetchBusinesses = async (token: string | null) => {
 const categories = ["All Services", "Barber", "Mechanic", "Beauty", "Health", "Automotive", "Cleaning"];
 
 export default function BrowsePage() {
+        console.log('fetch ran for this apge!!');
     const { token } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("All Services");
 
     const { data: businesses, isLoading } = useQuery({
         queryKey: ['businesses', token],
-        queryFn: () => fetchBusinesses(token),
-        enabled: !!token
+        queryFn: () => fetchBusinesses(),
     });
 
+    console.log('List of businesses', businesses);
     // Memoized filtering logic for performance
     const filteredBusinesses = useMemo(() => {
         if (!businesses) return [];

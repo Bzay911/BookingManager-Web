@@ -1,6 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
-import { Badge } from "../../components/ui/badge";
 import { useAuth } from "../../contexts/Authcontext";
 import {
   Users, CalendarClock, Settings, LayoutDashboard,
@@ -22,36 +21,41 @@ export default function DashboardLayout() {
     : "BM";
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#f7f7f7] overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col py-6 px-4 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center gap-3 px-2 mb-10 mt-2">
-          <div className="w-9 h-9 bg-[#0be48d] rounded-xl flex items-center justify-center shadow-md shadow-[#0be48d]/20">
-            <Calendar size={18} className="text-white" />
+      <aside className="w-60 shrink-0 bg-[#f7f7f7] border-r border-gray-200 flex flex-col py-6 px-4 z-20">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-2 mb-8 mt-1">
+          <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
+            <Calendar size={14} className="text-[#0be48d]" />
           </div>
-          <span className="font-extrabold text-black text-lg tracking-tight">BookingManager</span>
+          <span className="font-medium text-black text-sm tracking-tight">BookingManager</span>
         </div>
 
+        {/* Nav section label */}
+        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest px-2 mb-2">
+          Menu
+        </p>
+
         {/* Nav Links */}
-        <nav className="flex-1 flex flex-col gap-2">
+        <nav className="flex-1 flex flex-col gap-0.5">
           {navItems.map(({ icon: Icon, label, path }) => (
             <NavLink
               key={label}
               to={path}
               end={path === "/dashboard"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm transition-all duration-200 ${
+                `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${
                   isActive
-                    ? "bg-gray-100 text-black shadow-sm"
-                    : "text-gray-500 hover:text-black hover:bg-gray-50"
+                    ? "bg-black/[0.03] text-black"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-black/[0.03]"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16}/>
+                  <Icon size={15} className={isActive ? "text-black" : "text-gray-400"} />
                   {label}
-                  {isActive && <ChevronRight size={14} className="ml-auto opacity-40" />}
                 </>
               )}
             </NavLink>
@@ -59,56 +63,51 @@ export default function DashboardLayout() {
         </nav>
 
         {/* User profile */}
-        <div className="border-t border-gray-100 pt-4 mt-4">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <Avatar className="w-8 h-8 border border-gray-100 shadow-sm">
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <Avatar className="w-7 h-7 border border-gray-200">
               <AvatarImage src={user?.profileImage ?? undefined} />
-              <AvatarFallback className="bg-black text-white text-xs">
+              <AvatarFallback className="bg-black text-white text-[10px] font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-black truncate">
+              <p className="text-xs font-medium text-black truncate">
                 {user?.displayName ?? "Business Owner"}
               </p>
-              <p className="text-xs text-gray-400 truncate">{user?.email ?? "Pro Account"}</p>
+              <p className="text-[10px] text-gray-400 truncate">{user?.email ?? "Pro Account"}</p>
             </div>
-            <button 
-              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" 
+            <button
+              className="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-400 transition-colors"
               onClick={logout}
               title="Log out"
             >
-              <LogOut size={16} />
+              <LogOut size={13} />
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto relative flex flex-col">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0be48d] opacity-[0.03] blur-[100px] rounded-full pointer-events-none -z-10"></div>
-
-        {/* Universal Top Bar */}
-        <header className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-md border-b border-gray-100 px-10 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-medium text-black tracking-tight">
-              Welcome back,{" "}
-              <span className="text-black font-bold">
-                {user?.displayName?.split(" ")[0] ?? "there"}
-              </span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge className="bg-white text-black border border-gray-200 text-xs px-3 py-1.5 rounded-full shadow-sm">
+      <main className="flex-1 overflow-y-auto flex flex-col bg-[#f7f7f7]">
+        {/* Top Bar */}
+        <header className="sticky top-0 z-10 bg-[#f7f7f7] border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+          <h1 className="text-sm text-gray-500 font-medium">
+            Welcome back,{" "}
+            <span className="text-black font-semibold">
+              {user?.displayName?.split(" ")[0] ?? "there"}
+            </span>
+          </h1>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">
               {user?.role === "BUSINESS" ? "Business" : "Customer"}
-            </Badge>
+            </span>
           </div>
         </header>
 
-        <div className="flex-1 p-10">
+        <div className="flex-1 p-8">
           <Outlet />
         </div>
-        
       </main>
     </div>
   );

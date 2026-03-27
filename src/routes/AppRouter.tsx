@@ -1,81 +1,81 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute';
-import AuthScreen from '../pages/auth/AuthScreen';
-import RootRoute from './RootRoute';
-import DashboardLayout from '../pages/dashboardLayout/DashboardLayout';
-import Dashboard from '../pages/dashboard/Dashboard';
-import QueuePage from '../pages/queue/QueuePage';
-import BookingPage from '../pages/booking/BookingPage';
-import OnboardingPage from '../pages/onBoarding/OnboardingPage';
-import BusinessSetupPage from '../pages/businessSetupPage/BusinessSetupPage';
-import BrowsePage from '../pages/customer/BrowsePage';
-import LandingPage from '../LandingPage';
-import OnboardingGuard from './OnboardingGuard';
-import BusinesDetailsPage from '../pages/customer/BusinessDetailsPage';
-import DashboardGuard from './DashboardGuard';
-import BusinessSetupGuard from './BusinessSetupGuard';
-import BusinessPage from '../pages/analytics/BusinessPage';
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
+import AuthScreen from "../pages/auth/AuthScreen";
+import RootRoute from "./RootRoute";
+import DashboardLayout from "../pages/dashboardLayout/DashboardLayout";
+import Dashboard from "../pages/business/dashboard/Dashboard";
+import QueuePage from "../pages/business/queue/QueuePage";
+import BookingPage from "../pages/business/booking/BookingPage";
+import OnboardingPage from "../pages/onBoarding/OnboardingPage";
+import BusinessSetupPage from "../pages/businessSetupPage/BusinessSetupPage";
+import BrowsePage from "../pages/customer/BrowsePage";
+import LandingPage from "../LandingPage";
+import OnboardingGuard from "./OnboardingGuard";
+import BusinesDetailsPage from "../pages/customer/BusinessDetailsPage";
+import DashboardGuard from "./DashboardGuard";
+import BusinessSetupGuard from "./BusinessSetupGuard";
+import BusinessPage from "../pages/business/businessPage/BusinessPage";
 
 export const router = createBrowserRouter([
   // Public routes
   {
-    path: '/',
-    element: <RootRoute />
+    path: "/",
+    element: <RootRoute />,
   },
   {
-    path: '/auth',
-    element: <AuthScreen />
+    path: "/auth",
+    element: <AuthScreen />,
   },
-  
+
   {
-    path: '/landingPage',
-    element: <LandingPage />
+    path: "/landingPage",
+    element: <LandingPage />,
   },
-  
+
   // Protected routes with Layout
   {
-    path: '/onboarding',
+    path: "/onboarding",
     element: (
       <ProtectedRoute>
         <OnboardingGuard>
-        <OnboardingPage />
+          <OnboardingPage />
         </OnboardingGuard>
       </ProtectedRoute>
-    )
+    ),
   },
 
   // for businesses to complete their setup
-    {
-    path: '/setup-business',
+  {
+    path: "/setup-business",
     element: (
       <ProtectedRoute>
         <BusinessSetupGuard>
           <BusinessSetupPage />
         </BusinessSetupGuard>
       </ProtectedRoute>
-    )
+    ),
   },
 
   // default route for customers after login to browse businesses
-    {
-    path: '/browse',
+  {
+    path: "/browse",
     element: (
       // <ProtectedRoute>
-        <BrowsePage />
+      <BrowsePage />
       // </ProtectedRoute>
-    )
+    ),
   },
 
-{
-  path: '/business/:id',
-  element:(
-    // <ProtectedRoute>
-      <BusinesDetailsPage />
-    // </ProtectedRoute>
-  )
-},
   {
-    path: '/dashboard',
+    path: "/business/:id",
+    element: (
+      // <ProtectedRoute>
+      <BusinesDetailsPage />
+      // </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard",
     element: (
       <ProtectedRoute>
         <DashboardGuard>
@@ -85,27 +85,27 @@ export const router = createBrowserRouter([
     ),
     children: [
       {
-        index: true, 
-        element: <Dashboard />
+        index: true,
+        element: <Dashboard />,
       },
       {
-        path: 'queue',
-        element: <QueuePage /> 
+        path: "queue",
+        element: <QueuePage />,
       },
       {
-        path: 'bookings', 
-        element: <BookingPage /> 
+        path: "bookings",
+        element: <BookingPage />,
       },
       {
-        path: 'business', 
-        element: <BusinessPage /> 
+        path: "business",
+        element: <BusinessPage />,
       },
-    ]
+    ],
   },
 
   // 404
   {
-    path: '*',
-    element: <Navigate to="/" replace />
-  }
-])
+    path: "*",
+    element: <Navigate to="/" replace />,
+  },
+]);

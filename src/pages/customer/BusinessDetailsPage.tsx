@@ -19,13 +19,12 @@ import { Badge } from "../../components/ui/badge";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const fetchBusinessDetails = async (id: string, token: string | null) => {
+const fetchBusinessDetails = async (id: string) => {
   const response = await fetch(
     `${API_BASE_URL}/api/business/get-business/${id}`,
     {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     },
   );
@@ -36,7 +35,6 @@ const fetchBusinessDetails = async (id: string, token: string | null) => {
 export default function BusinessDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token } = useAuth();
 
   const {
     data: business,
@@ -44,12 +42,12 @@ export default function BusinessDetailsPage() {
     isError,
   } = useQuery({
     queryKey: ["business", id],
-    queryFn: () => fetchBusinessDetails(id as string, token),
+    queryFn: () => fetchBusinessDetails(id as string),
     enabled: !!id,
   });
 
   const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(
-    `Hi! I'd like to book an appointment at ${business?.businessName}. (Ref: ${business?.id})`
+    `BUSINESS:${business?.id} Hi! I'd like to book an appointment at ${business?.businessName}`
   )}`;
 
   if (isLoading)
