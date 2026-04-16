@@ -57,8 +57,8 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#0be48d] rounded-lg flex items-center justify-center">
-              <Calendar className="text-white w-5 h-5" />
+            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
+              <Calendar size={18} className="text-white" />
             </div>
             <h1 className="text-xl font-bold tracking-tight">BookingManager</h1>
           </div>

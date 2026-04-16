@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../contexts/Authcontext";
 import {
@@ -15,6 +16,13 @@ import { Badge } from "../../../components/ui/badge";
 import { Skeleton } from "../../../components/ui/skeleton";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+interface ServiceItem {
+  id: string | number;
+  service: string;
+  price: number;
+  durationMinutes: number;
+}
 
 const fetchBusinessByOwner = async (token: string | null) => {
   const response = await fetch(
@@ -69,12 +77,52 @@ function BusinessLoadingSkeleton() {
 
 export default function BusinessPage() {
   const { token } = useAuth();
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [serviceName, setServiceName] = useState("");
+  const [servicePrice, setServicePrice] = useState("");
+  const [serviceDurationMinutes, setServiceDurationMinutes] = useState("");
+  const [addedServices, setAddedServices] = useState<ServiceItem[]>([]);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["owner-business", token],
     queryFn: () => fetchBusinessByOwner(token),
     enabled: !!token,
   });
+
+  const displayedServices: ServiceItem[] = [
+    ...((business?.services || []) as ServiceItem[]),
+    ...addedServices,
+  ];
+
+  const handleAddService = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!serviceName.trim() || !servicePrice.trim() || !serviceDurationMinutes.trim()) {
+      return;
+    }
+
+    const parsedPrice = Number(servicePrice);
+    const parsedDuration = Number(serviceDurationMinutes);
+
+    if (Number.isNaN(parsedPrice) || Number.isNaN(parsedDuration)) {
+      return;
+    }
+
+    setAddedServices((prev) => [
+      ...prev,
+      {
+        id: `temp-${Date.now()}`,
+        service: serviceName.trim(),
+        price: parsedPrice,
+        durationMinutes: parsedDuration,
+      },
+    ]);
+
+    setServiceName("");
+    setServicePrice("");
+    setServiceDurationMinutes("");
+    setIsAddServiceModalOpen(false);
+  };
 
   // Use the Shimmer Effect during loading
   if (isLoading) return <BusinessLoadingSkeleton />;
@@ -140,7 +188,7 @@ export default function BusinessPage() {
           <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50">
             <Tag size={12} className="text-gray-400" />
             <span className="text-xs font-medium text-gray-600">
-              {business.services?.length || 0} Services Offered
+              {displayedServices.length} Services Offered
             </span>
           </div>
         </div>
@@ -156,14 +204,17 @@ export default function BusinessPage() {
               Add or edit the services your customers can book
             </p>
           </div>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-black text-white rounded-lg text-xs font-medium hover:bg-gray-800 transition-all active:scale-95">
+          <button
+            onClick={() => setIsAddServiceModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-black text-white rounded-lg text-xs font-medium hover:bg-gray-800 transition-all active:scale-95"
+          >
             <Plus size={14} /> Add New
           </button>
         </div>
 
         <div className="space-y-2">
-          {business.services?.length > 0 ? (
-            business.services.map((service: any) => (
+          {displayedServices.length > 0 ? (
+            displayedServices.map((service: ServiceItem) => (
               <div
                 key={service.id}
                 className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-lg hover:bg-white hover:border-gray-200 hover:shadow-sm transition-all group"
@@ -214,6 +265,89 @@ export default function BusinessPage() {
           )}
         </div>
       </section>
+
+      {isAddServiceModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] p-4 flex items-center justify-center"
+          onClick={() => setIsAddServiceModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-black">Add Service</h4>
+              <p className="text-xs text-gray-400 mt-1">
+                Enter service name, price, and duration in minutes.
+              </p>
+            </div>
+
+            <form onSubmit={handleAddService} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Service Name
+                </label>
+                <input
+                  type="text"
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                  placeholder="e.g. Haircut"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={servicePrice}
+                  onChange={(e) => setServicePrice(e.target.value)}
+                  placeholder="e.g. 25"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Duration (minutes)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={serviceDurationMinutes}
+                  onChange={(e) => setServiceDurationMinutes(e.target.value)}
+                  placeholder="e.g. 30"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  required
+                />
+              </div>
+
+              <div className="pt-1 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddServiceModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800"
+                >
+                  Save Service
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

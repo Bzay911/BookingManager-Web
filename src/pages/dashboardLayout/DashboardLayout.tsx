@@ -21,13 +21,13 @@ export default function DashboardLayout() {
     : "BM";
 
   return (
-    <div className="flex h-screen bg-[#f7f7f7] overflow-hidden font-sans">
+    <div className="flex h-screen bg-white overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-60 shrink-0 bg-[#f7f7f7] border-r border-gray-200 flex flex-col py-6 px-4 z-20">
+      <aside className="w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col py-6 px-4 z-20">
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-2 mb-8 mt-1">
-          <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
-            <Calendar size={14} className="text-[#0be48d]" />
+          <div className="w-7 h-7 bg-black rounded-sm flex items-center justify-center">
+            <Calendar size={14} className="text-white" />
           </div>
           <span className="font-medium text-black text-sm tracking-tight">BookingManager</span>
         </div>
@@ -92,12 +92,14 @@ export default function DashboardLayout() {
       <main className="flex-1 overflow-y-auto flex flex-col bg-[#f7f7f7]">
         {/* Top Bar */}
         <header className="sticky top-0 z-10 bg-[#f7f7f7] border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-          <h1 className="text-sm text-gray-500 font-medium">
+          <div>
+
+          <h1 className="text-lg">
             Welcome back,{" "}
-            <span className="text-black font-semibold">
               {user?.displayName?.split(" ")[0] ?? "there"}
-            </span>
           </h1>
+          <p className="text-sm text-gray-400">Here is what's happening with your business today</p>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">
               {user?.role === "BUSINESS" ? "Business" : "Customer"}
