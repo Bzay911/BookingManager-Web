@@ -6,11 +6,9 @@ import DashboardLayout from "../pages/dashboardLayout/DashboardLayout";
 import Dashboard from "../pages/business/dashboard/Dashboard";
 import QueuePage from "../pages/business/queue/QueuePage";
 import BookingPage from "../pages/business/booking/BookingPage";
-import OnboardingPage from "../pages/onBoarding/OnboardingPage";
 import BusinessSetupPage from "../pages/businessSetupPage/BusinessSetupPage";
 import BrowsePage from "../pages/customer/BrowsePage";
 import LandingPage from "../LandingPage";
-import OnboardingGuard from "./OnboardingGuard";
 import BusinesDetailsPage from "../pages/customer/BusinessDetailsPage";
 import DashboardGuard from "./DashboardGuard";
 import BusinessSetupGuard from "./BusinessSetupGuard";
@@ -31,20 +29,6 @@ export const router = createBrowserRouter([
     path: "/landingPage",
     element: <LandingPage />,
   },
-
-  // Protected routes with Layout
-  {
-    path: "/onboarding",
-    element: (
-      <ProtectedRoute>
-        <OnboardingGuard>
-          <OnboardingPage />
-        </OnboardingGuard>
-      </ProtectedRoute>
-    ),
-  },
-
-  // for businesses to complete their setup
   {
     path: "/setup-business",
     element: (
@@ -56,7 +40,6 @@ export const router = createBrowserRouter([
     ),
   },
 
-  // default route for customers after login to browse businesses
   {
     path: "/browse",
     element: (

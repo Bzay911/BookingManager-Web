@@ -102,7 +102,7 @@ export default function DashboardLayout() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-full">
-              {user?.role === "BUSINESS" ? "Business" : "Customer"}
+             Business
             </span>
           </div>
         </header>

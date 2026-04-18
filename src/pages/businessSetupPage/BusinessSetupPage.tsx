@@ -162,7 +162,7 @@ export default function SetupBusinessPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setUser({ ...user!, isOnboarded: true });
+        setUser({ ...user!, isOnBoarded: true });
         console.log("Business setup successful:", data);
         setShowVerification(false);
         alert("Your business has been set up successfully!");

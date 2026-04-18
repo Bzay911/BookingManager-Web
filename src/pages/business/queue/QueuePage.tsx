@@ -1,113 +1,28 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../contexts/Authcontext";
-// import { io, Socket } from "socket.io-client";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Skeleton } from "../../../components/ui/skeleton";
-import { Users, Clock, CheckCircle2, MoreHorizontal, X } from "lucide-react";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-interface QueueEntry {
-  id: number;
-  position: number;
-  status: "WAITING" | "IN_PROGRESS" | "DONE";
-  joinedAt: string;
-  booking: {
-    scheduledAt: string;
-    customer: { displayName: string | null; phoneNumber: string | null };
-    service:  { service: string | null; durationMinutes: number; price: number };
-  };
-}
-
-interface ServiceItem {
-  id: string | number;
-  service: string;
-  price: number;
-  durationMinutes: number;
-}
-
-interface TimeSlot {
-  start: string;
-  end: string;
-  label: string;
-}
-
-const fetchQueue = async (token: string): Promise<QueueEntry[]> => {
-  const res = await fetch(`${API_BASE_URL}/api/liveQueue/get-live-queue`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) throw new Error("Failed to fetch queue");
-  return res.json();
-};
-
-const fetchBusinessByOwner = async (token: string) => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/business/get-business-by-owner`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  if (!response.ok) throw new Error("Failed to fetch business");
-  const data = await response.json();
-  return Array.isArray(data) ? data[0] : data;
-};
-
-const generateAvailableSlots = async (token: string, serviceId: string): Promise<TimeSlot[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/business/get-available-slots/${serviceId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  if (!response.ok) throw new Error("Failed to generate available slots");
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : Array.isArray(data?.slots) ? data.slots : [];
-};
-
-function QueueSkeleton() {
-  return (
-    <>
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-          <div className="flex items-center gap-3">
-            <Skeleton className="w-9 h-9 rounded-full" />
-            <div className="space-y-1.5">
-              <Skeleton className="h-3.5 w-24" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-          </div>
-          <Skeleton className="h-6 w-14 rounded-full" />
-        </div>
-      ))}
-    </>
-  );
-}
-
-function initials(name: string | null) {
-  if (!name) return "?";
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase();
-}
-
-function waitMins(joinedAt: string, currentTime: number) {
-  const diff = Math.floor((currentTime - new Date(joinedAt).getTime()) / 60000);
-  return diff < 1 ? "just now" : `${diff} min${diff > 1 ? "s" : ""}`;
-}
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
+import { Users, CheckCircle2, MoreHorizontal, X, Clock3 } from "lucide-react";
+import initials from "./utils/getCustomerInitials";
+import waitTimeAgo from "./utils/getWaitTime";
+import QueueSkeleton from "./utils/getQueueSkeleton";
+import getTimeSlotRange from "./utils/getTimeSlotRange";
+import {
+  addWalkIn,
+  fetchBusinessByOwner,
+  fetchQueue,
+  generateAvailableSlots,
+} from "./api/queueApi";
+import type { QueueEntry, ServiceItem, TimeSlot } from "./api/queueApi";
 
 export default function QueuePage() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
   const [isAddWalkInModalOpen, setIsAddWalkInModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "service">("details");
   const [customerName, setCustomerName] = useState("");
@@ -115,11 +30,18 @@ export default function QueuePage() {
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [generatedSlots, setGeneratedSlots] = useState<TimeSlot[]>([]);
-  const [currentTime] = useState(() => Date.now());
-  // const queryClient = useQueryClient();
-  // const [socketConnected, setSocketConnected] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
-  // 1. Initial load via useQuery — exactly like your BookingPage
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
   const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
     queryKey: ["queue", token],
     queryFn: () => {
@@ -139,6 +61,14 @@ export default function QueuePage() {
   });
 
   const services: ServiceItem[] = (business?.services || []) as ServiceItem[];
+  const currentServiceEntry = queue.find((entry) => entry.position === 1);
+  const waitingCount = queue.filter((entry) => entry.position > 1).length;
+
+  const getQueueStatusLabel = (position: number) => {
+    if (position === 1) return "In service";
+    if (position === 2) return "Up next";
+    return "Waiting";
+  };
 
   const handleCloseModal = () => {
     setIsAddWalkInModalOpen(false);
@@ -147,25 +77,18 @@ export default function QueuePage() {
     setPhoneNumber("");
     setSelectedServiceId("");
     setSelectedSlot(null);
+    setGeneratedSlots([]);
   };
 
   const handleCreateWalkIn = () => {
+    setGeneratedSlots([]);
     if (!customerName.trim() || !selectedServiceId || !selectedSlot) return;
-    // TODO: Wire up API call to create walk-in with:
-    // - customerName, phoneNumber
-    // - selectedServiceId
-    // - selectedSlot (contains start, end, label)
-    console.log({
+    addWalkInMutation.mutate({
       customerName,
       phoneNumber,
       serviceId: selectedServiceId,
-      slot: {
-        label: selectedSlot.label,
-        start: selectedSlot.start,
-        end: selectedSlot.end,
-      },
+      slot: selectedSlot,
     });
-    handleCloseModal();
   };
 
   const generateSlotsMutation = useMutation({
@@ -179,38 +102,72 @@ export default function QueuePage() {
     },
   });
 
-  // 2. Socket.io — takes over after initial load
-  // useEffect(() => {
-  //   if (!token || !user) return;
-
-  //   const socket: Socket = io(API_BASE_URL, {
-  //     auth: { token }, // optional: send token for socket auth
-  //   });
-
-  //   socket.on("connect", () => {
-  //     setSocketConnected(true);
-  //     // tell the server which business room to join
-  //     // user.businessId comes from your auth context
-  //     socket.emit("join:business", user.businessId);
-  //   });
-
-  //   socket.on("disconnect", () => setSocketConnected(false));
-
-  //   // every time the server emits queue:updated, replace the cache
-  //   socket.on("queue:updated", (updatedQueue: QueueEntry[]) => {
-  //     queryClient.setQueryData(["queue", token], updatedQueue);
-  //   });
-
-  //   return () => {
-  //     socket.disconnect();
-  //   };
-  // }, [token, user, queryClient]);
+  const addWalkInMutation = useMutation({
+    mutationFn: async (walkInData: {
+      customerName: string;
+      phoneNumber: string;
+      serviceId: string;
+      slot: TimeSlot;
+    }) => {
+      if (!token) throw new Error("No token");
+      return addWalkIn(token, walkInData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["queue", token] });
+      handleCloseModal();
+    },
+    onError: (error: Error) => {
+      alert(error.message);
+    },
+  });
 
   return (
     <div className="space-y-4">
-
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Card className="border border-gray-200 rounded-xl bg-white shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={16} className="text-gray-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-medium text-gray-400 leading-none mb-1">
+                  Currently in service
+                </p>
+                {isLoading ? (
+                  <p className="text-2xl font-extrabold text-black tracking-tight leading-none">
+                    —
+                  </p>
+                ) : currentServiceEntry ? (
+                  <>
+                    <p className="text-2xl font-extrabold text-black tracking-tight leading-none truncate">
+                      {currentServiceEntry.booking.customer.displayName ??
+                        "Walk-in"}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400 truncate">
+                      {currentServiceEntry.booking.service.service} ·{" "}
+                      {currentServiceEntry.booking.service.durationMinutes} min ·{" "}
+                      <Clock3
+                        size={12}
+                        className="text-gray-400 inline-block align-[-2px]"
+                      />{" "}
+                      {getTimeSlotRange(
+                        currentServiceEntry.booking.scheduledAt,
+                        currentServiceEntry.booking.service.durationMinutes,
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium text-gray-500 leading-none">
+                    No one is currently in service
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border border-gray-200 rounded-xl bg-white shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3.5">
@@ -218,32 +175,17 @@ export default function QueuePage() {
                 <Users size={16} className="text-gray-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium text-gray-400 leading-none mb-1">In Queue</p>
+                <p className="text-[11px] font-medium text-gray-400 leading-none mb-1">
+                  In Queue
+                </p>
                 <p className="text-2xl font-extrabold text-black tracking-tight leading-none">
-                  {isLoading ? "—" : queue.length}
+                  {isLoading ? "—" : waitingCount}
                 </p>
               </div>
             </div>
-            <p className="text-[10px] text-gray-400 mt-2.5 ml-13">People currently waiting</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-gray-200 rounded-xl bg-white shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                <Clock size={16} className="text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium text-gray-400 leading-none mb-1">Avg. Wait</p>
-                <p className="text-2xl font-extrabold text-black tracking-tight leading-none">
-                  {isLoading ? "—" : queue.length > 0
-                    ? `${Math.round(queue.reduce((acc, e) => acc + Math.floor((currentTime - new Date(e.joinedAt).getTime()) / 60000), 0) / queue.length)} min`
-                    : "0 min"}
-                </p>
-              </div>
-            </div>
-            <p className="text-[10px] text-gray-400 mt-2.5 ml-13">Average wait time today</p>
+            <p className="text-[10px] text-gray-400 mt-2.5 ml-13">
+              People waiting after the current service
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -251,7 +193,9 @@ export default function QueuePage() {
       {/* Queue List */}
       <Card className="border border-gray-200 rounded-xl bg-white shadow-sm">
         <CardHeader className="border-b border-gray-100 px-6 pt-6 pb-4 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-medium text-black">Up Next</CardTitle>
+          <CardTitle className="text-sm font-medium text-black">
+            Up Next
+          </CardTitle>
           <button
             onClick={() => setIsAddWalkInModalOpen(true)}
             className="text-xs font-medium text-white bg-black hover:bg-gray-800 px-4 py-2 rounded-lg transition-colors"
@@ -267,7 +211,9 @@ export default function QueuePage() {
             ) : queue.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 opacity-30">
                 <Users size={36} className="mb-3 text-gray-400" />
-                <p className="text-sm font-medium text-gray-900">Queue is empty</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Queue is empty
+                </p>
                 <p className="text-xs text-gray-500">
                   New bookings will appear here automatically
                 </p>
@@ -280,11 +226,13 @@ export default function QueuePage() {
                 >
                   {/* Left — avatar + name */}
                   <div className="flex items-center gap-3.5">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      index === 0
-                        ? "bg-black text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        index === 0
+                          ? "bg-black text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
                       {initials(entry.booking.customer.displayName)}
                     </div>
                     <div>
@@ -292,7 +240,16 @@ export default function QueuePage() {
                         {entry.booking.customer.displayName ?? "Walk-in"}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {entry.booking.service.service} · {entry.booking.service.durationMinutes} min
+                        {entry.booking.service.service} ·{" "}
+                        {entry.booking.service.durationMinutes} min ·{" "}
+                        <Clock3
+                          size={12}
+                          className="text-gray-400 inline-block align-[-2px]"
+                        />{" "}
+                        {getTimeSlotRange(
+                          entry.booking.scheduledAt,
+                          entry.booking.service.durationMinutes,
+                        )}
                       </p>
                     </div>
                   </div>
@@ -300,24 +257,23 @@ export default function QueuePage() {
                   {/* Right — status + actions */}
                   <div className="flex items-center gap-5">
                     <div className="hidden md:flex flex-col items-end gap-1">
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        index === 0
-                          ? "bg-black/5 border border-black/10 text-black"
-                          : "bg-white border border-gray-200 text-gray-500"
-                      }`}>
-                        {index === 0 ? "Next up" : "Waiting"}
+                      <span
+                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                          entry.position === 1
+                            ? "bg-emerald-100 border border-emerald-200 text-emerald-700"
+                            : entry.position === 2
+                              ? "bg-white border border-gray-200 text-gray-500"
+                            : "bg-white border border-gray-200 text-gray-500"
+                        }`}
+                      >
+                        {getQueueStatusLabel(entry.position)}
                       </span>
                       <span className="text-[10px] text-gray-300">
-                        {waitMins(entry.joinedAt, currentTime)}
+                        {waitTimeAgo(entry.joinedAt, currentTime)}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      {index === 0 && (
-                        <button className="w-8 h-8 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center transition-colors">
-                          <CheckCircle2 size={14} />
-                        </button>
-                      )}
                       <button className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-black flex items-center justify-center transition-colors">
                         <MoreHorizontal size={14} />
                       </button>
@@ -341,8 +297,12 @@ export default function QueuePage() {
           >
             <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-black">Add walk-ins</h3>
-                <p className="text-xs text-gray-400 mt-1">Create a walk-in queue entry</p>
+                <h3 className="text-lg font-semibold text-black">
+                  Add walk-ins
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Create a walk-in queue entry
+                </p>
               </div>
               <button
                 onClick={handleCloseModal}
@@ -437,15 +397,23 @@ export default function QueuePage() {
                   <div>
                     <button
                       type="button"
-                      onClick={() => generateSlotsMutation.mutate(selectedServiceId)}
-                      disabled={!selectedServiceId || generateSlotsMutation.isPending}
+                      onClick={() =>
+                        generateSlotsMutation.mutate(selectedServiceId)
+                      }
+                      disabled={
+                        !selectedServiceId || generateSlotsMutation.isPending
+                      }
                       className="w-full rounded-lg bg-black px-4 py-2.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {generateSlotsMutation.isPending ? "Generating slots..." : "Generate available slot"}
+                      {generateSlotsMutation.isPending
+                        ? "Generating slots..."
+                        : "Generate available slot"}
                     </button>
 
                     <div className="mt-3">
-                      <p className="block text-xs font-medium text-gray-600 mb-2">Available time slots</p>
+                      <p className="block text-xs font-medium text-gray-600 mb-2">
+                        Available time slots
+                      </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
                         {generatedSlots.length > 0 ? (
                           generatedSlots.map((slot) => (
@@ -460,12 +428,15 @@ export default function QueuePage() {
                               }`}
                             >
                               <div className="font-medium">{slot.label}</div>
-                              <div className="mt-1 text-[10px] opacity-70">{slot.start}</div>
+                              <div className="mt-1 text-[10px] opacity-70">
+                                {slot.start}
+                              </div>
                             </button>
                           ))
                         ) : (
                           <div className="col-span-full rounded-lg border border-dashed border-gray-200 px-3 py-6 text-center text-[11px] text-gray-400">
-                            Generate slots for the selected service to view availability.
+                            Generate slots for the selected service to view
+                            availability.
                           </div>
                         )}
                       </div>
@@ -497,10 +468,15 @@ export default function QueuePage() {
                 <button
                   type="button"
                   onClick={handleCreateWalkIn}
-                  disabled={!customerName.trim() || !selectedServiceId || !selectedSlot}
+                  disabled={
+                    !customerName.trim() ||
+                    !selectedServiceId ||
+                    !selectedSlot ||
+                    addWalkInMutation.isPending
+                  }
                   className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Add to Queue
+                  {addWalkInMutation.isPending ? "Adding..." : "Add to Queue"}
                 </button>
               )}
             </div>

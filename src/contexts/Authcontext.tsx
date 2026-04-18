@@ -17,7 +17,6 @@ interface User{
     displayName: string;
     email: string;
     profileImage: string | null;
-    role: 'BUSINESS' | 'CUSTOMER' | null;
     isOnBoarded: boolean;
     business: Business | null;
 }

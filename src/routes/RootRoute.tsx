@@ -6,15 +6,8 @@ export default function RootRoute() {
 
   if (!token || !user) return <Navigate to="/landingPage" replace />;
 
-  if (!user.role) return <Navigate to="/onboarding" replace />;
-
- if (user.role === "BUSINESS") {
-  return user.isOnBoarded 
+  return user.isOnBoarded
     ? <Navigate to="/dashboard" replace />
     : <Navigate to="/setup-business" replace />;
-}
 
-  // if (user.role === 'CUSTOMER') {
-  //   return <Navigate to="/browse" replace />;
-  // }
 }
