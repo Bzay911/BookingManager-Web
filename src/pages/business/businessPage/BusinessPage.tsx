@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../../contexts/Authcontext";
 import {
   Clock,
@@ -39,6 +39,24 @@ const fetchBusinessByOwner = async (token: string | null) => {
   return Array.isArray(data) ? data[0] : data;
 };
 
+const addService = async (token: string | null, serviceName: string, servicePrice: number, serviceDuration: number) => {
+  const response = await fetch(`${API_BASE_URL}/api/services/add-service`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      serviceName: serviceName,
+      servicePrice: servicePrice,
+      serviceDuration: serviceDuration,
+    }),
+  });
+  if (!response.ok) throw new Error("Failed to add service");
+  const data = await response.json();
+  return data;
+}
+
 function BusinessLoadingSkeleton() {
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -77,17 +95,30 @@ function BusinessLoadingSkeleton() {
 
 export default function BusinessPage() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDurationMinutes, setServiceDurationMinutes] = useState("");
-  const [addedServices, setAddedServices] = useState<ServiceItem[]>([]);
+  const [addedServices] = useState<ServiceItem[]>([]);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["owner-business", token],
     queryFn: () => fetchBusinessByOwner(token),
     enabled: !!token,
   });
+
+  const addServiceMutation = useMutation({
+  mutationFn: ({ serviceName, servicePrice, serviceDuration }: { serviceName: string; servicePrice: number; serviceDuration: number }) =>
+    addService(token, serviceName, servicePrice, serviceDuration),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["owner-business"] });
+     setServiceName("");
+    setServicePrice("");
+    setServiceDurationMinutes("");
+    setIsAddServiceModalOpen(false);
+  },
+});
 
   const displayedServices: ServiceItem[] = [
     ...((business?.services || []) as ServiceItem[]),
@@ -108,20 +139,11 @@ export default function BusinessPage() {
       return;
     }
 
-    setAddedServices((prev) => [
-      ...prev,
-      {
-        id: `temp-${Date.now()}`,
-        service: serviceName.trim(),
-        price: parsedPrice,
-        durationMinutes: parsedDuration,
-      },
-    ]);
-
-    setServiceName("");
-    setServicePrice("");
-    setServiceDurationMinutes("");
-    setIsAddServiceModalOpen(false);
+    addServiceMutation.mutate({
+      serviceName: serviceName,
+      servicePrice: parsedPrice,
+      serviceDuration: parsedDuration,
+    });
   };
 
   // Use the Shimmer Effect during loading
@@ -337,12 +359,13 @@ export default function BusinessPage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800"
-                >
-                  Save Service
-                </button>
+              <button
+  type="submit"
+  disabled={addServiceMutation.isPending}
+  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800 disabled:opacity-50"
+>
+  {addServiceMutation.isPending ? "Saving..." : "Save Service"}
+</button>
               </div>
             </form>
           </div>

@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Users, CheckCircle2, MoreHorizontal, X, Clock3 } from "lucide-react";
+import { toast } from "sonner";
+import { useSocketQueue } from "../../../hooks/useSocketQueue";
 import initials from "./utils/getCustomerInitials";
 import waitTimeAgo from "./utils/getWaitTime";
 import QueueSkeleton from "./utils/getQueueSkeleton";
@@ -21,7 +23,7 @@ import {
 import type { QueueEntry, ServiceItem, TimeSlot } from "./api/queueApi";
 
 export default function QueuePage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const queryClient = useQueryClient();
   const [isAddWalkInModalOpen, setIsAddWalkInModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "service">("details");
@@ -31,6 +33,21 @@ export default function QueuePage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [generatedSlots, setGeneratedSlots] = useState<TimeSlot[]>([]);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [isQueueRefreshingAfterAdd, setIsQueueRefreshingAfterAdd] = useState(false);
+
+  // Setup socket connection to listen for real-time queue updates
+  useSocketQueue({
+    token: token || "",
+    businessId: user?.business?.id || null,
+    onUserAdded: (userData: unknown) => {
+      const user = userData as { customerName?: string };
+      toast.success(
+        `${user.customerName || "New customer"} added to queue`,
+        { duration: Infinity },
+      );
+      queryClient.invalidateQueries({ queryKey: ["queue", token] });
+    },
+  });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -110,14 +127,21 @@ export default function QueuePage() {
       slot: TimeSlot;
     }) => {
       if (!token) throw new Error("No token");
+      console.log("Adding walk-in with data:", walkInData);
       return addWalkIn(token, walkInData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["queue", token] });
+    onSuccess: async (_, variables) => {
       handleCloseModal();
+      toast.success(`${variables.customerName.trim() || "Walk-in"} added to queue`);
+      setIsQueueRefreshingAfterAdd(true);
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["queue", token] });
+      } finally {
+        setIsQueueRefreshingAfterAdd(false);
+      }
     },
     onError: (error: Error) => {
-      alert(error.message);
+      toast.error(error.message || "Failed to add walk-in");
     },
   });
 
@@ -206,7 +230,7 @@ export default function QueuePage() {
 
         <CardContent className="p-0">
           <div className="divide-y divide-gray-50">
-            {isLoading ? (
+            {isLoading || isQueueRefreshingAfterAdd ? (
               <QueueSkeleton />
             ) : queue.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 opacity-30">
