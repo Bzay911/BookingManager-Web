@@ -1,14 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../contexts/Authcontext";
-import {
-  Calendar,
-  MoreHorizontal,
-  Search,
-  DollarSign,
-} from "lucide-react";
+import { Calendar, Search, DollarSign } from "lucide-react";
 import {
   Table,
-  TableBody,  
+  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -16,75 +10,13 @@ import {
 } from "../../../components/ui/table";
 import { Badge } from "../../../components/ui/badge";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
-import { Skeleton } from "../../../components/ui/skeleton";
+import TableLoadingSkeleton from "./utils/getBookingsSkeleton";
+import { useBooking } from "../../../hooks/useBooking";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-const fetchBookings = async (token: string) => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/bookings/get-all-bookings`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-  if (!response.ok) throw new Error("Failed to fetch bookings");
-  const data = await response.json();
-  return data.bookings || data;
-};
-
-// --- SHIMMER SKELETON FOR TABLE ROWS ---
-function TableLoadingSkeleton() {
-  return (
-    <>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <TableRow key={i} className="border-gray-50 hover:bg-transparent">
-          <TableCell className="py-4 pl-6">
-            <div className="flex items-center gap-3">
-              <Skeleton className="w-9 h-9 rounded-full" />
-              <div className="space-y-1.5">
-                <Skeleton className="h-3.5 w-20" />
-                <Skeleton className="h-3 w-28" />
-              </div>
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="space-y-1.5">
-              <Skeleton className="h-3.5 w-28" />
-              <Skeleton className="h-3 w-14" />
-            </div>
-          </TableCell>
-          <TableCell>
-            <div className="space-y-1.5">
-              <Skeleton className="h-3.5 w-16" />
-              <Skeleton className="h-3 w-10" />
-            </div>
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-5 w-14 rounded-full" />
-          </TableCell>
-          <TableCell className="text-right pr-6">
-            <Skeleton className="h-7 w-7 rounded-lg ml-auto" />
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
-  );
-}
 
 export default function BookingPage() {
   const { token } = useAuth();
-
-  const { data: bookings, isLoading: loadingBookings } = useQuery({
-    queryKey: ["bookings", token],
-    queryFn: () => {
-      if (!token) throw new Error("No auth token found");
-      return fetchBookings(token);
-    },
-    enabled: !!token,
-  });
+  const { data: bookings, isLoading: loadingBookings } = useBooking(token);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-AU", {
@@ -92,7 +24,7 @@ export default function BookingPage() {
       month: "short",
       year: "numeric",
     });
-    
+
   const formatTime = (dateString: string) =>
     new Date(dateString).toLocaleTimeString("en-AU", {
       hour: "2-digit",
@@ -145,9 +77,6 @@ export default function BookingPage() {
               </TableHead>
               <TableHead className="py-3.5 font-medium text-gray-400 text-[10px] uppercase tracking-wider">
                 Status
-              </TableHead>
-              <TableHead className="py-3.5 font-medium text-gray-400 text-[10px] uppercase tracking-wider text-right pr-6">
-                Actions
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -221,12 +150,6 @@ export default function BookingPage() {
                     >
                       {booking.status}
                     </Badge>
-                  </TableCell>
-
-                  <TableCell className="text-right pr-6">
-                    <button className="p-1.5 text-gray-300 hover:text-black transition-colors rounded-lg hover:bg-gray-100">
-                      <MoreHorizontal size={14} />
-                    </button>
                   </TableCell>
                 </TableRow>
               ))

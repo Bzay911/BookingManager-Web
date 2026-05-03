@@ -105,3 +105,28 @@ export const addWalkIn = async (token: string, walkInData: WalkInData) => {
 
   return res.json();
 };
+
+export const updateQueueEntryStatus = async (
+  token: string,
+  queueEntryId: number,
+  status: "DONE" | "REMOVED",
+) => {
+  console.log('sending status update', { queueEntryId, status });
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/liveQueue/update-status/${queueEntryId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    },
+  );
+
+  console.log('received response', { status: res.status, statusText: res.statusText });
+  if (!res.ok) throw new Error(`Failed to mark entry as ${status}`);
+
+  return res.json();
+};

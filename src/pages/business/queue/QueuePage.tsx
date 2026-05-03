@@ -7,9 +7,25 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui/card";
-import { Users, CheckCircle2, MoreHorizontal, X, Clock3 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "../../../components/ui/dropdown-menu";
+import {
+  Users,
+  CheckCircle2,
+  MoreHorizontal,
+  X,
+  Clock3,
+  Check,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useSocketQueue } from "../../../hooks/useSocketQueue";
+import { useLiveQueue } from "../../../hooks/useLiveQueue";
 import initials from "./utils/getCustomerInitials";
 import waitTimeAgo from "./utils/getWaitTime";
 import QueueSkeleton from "./utils/getQueueSkeleton";
@@ -17,14 +33,15 @@ import getTimeSlotRange from "./utils/getTimeSlotRange";
 import {
   addWalkIn,
   fetchBusinessByOwner,
-  fetchQueue,
   generateAvailableSlots,
+  updateQueueEntryStatus,
 } from "./api/queueApi";
-import type { QueueEntry, ServiceItem, TimeSlot } from "./api/queueApi";
+import type { ServiceItem, TimeSlot } from "./api/queueApi";
 
 export default function QueuePage() {
   const { token, user } = useAuth();
   const queryClient = useQueryClient();
+
   const [isAddWalkInModalOpen, setIsAddWalkInModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "service">("details");
   const [customerName, setCustomerName] = useState("");
@@ -35,16 +52,18 @@ export default function QueuePage() {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [isQueueRefreshingAfterAdd, setIsQueueRefreshingAfterAdd] = useState(false);
 
+  const { data: queue = [], isLoading } = useLiveQueue(token);
+
+
   // Setup socket connection to listen for real-time queue updates
   useSocketQueue({
     token: token || "",
     businessId: user?.business?.id || null,
     onUserAdded: (userData: unknown) => {
       const user = userData as { customerName?: string };
-      toast.success(
-        `${user.customerName || "New customer"} added to queue`,
-        { duration: Infinity },
-      );
+      toast.success(`${user.customerName || "New customer"} added to queue`, {
+        duration: Infinity,
+      });
       queryClient.invalidateQueries({ queryKey: ["queue", token] });
     },
   });
@@ -59,14 +78,6 @@ export default function QueuePage() {
     };
   }, []);
 
-  const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
-    queryKey: ["queue", token],
-    queryFn: () => {
-      if (!token) throw new Error("No token");
-      return fetchQueue(token);
-    },
-    enabled: !!token,
-  });
 
   const { data: business } = useQuery({
     queryKey: ["owner-business", token],
@@ -75,6 +86,45 @@ export default function QueuePage() {
       return fetchBusinessByOwner(token);
     },
     enabled: !!token,
+  });
+
+    const generateSlotsMutation = useMutation({
+    mutationFn: async (serviceId: string) => {
+      if (!token) throw new Error("No token");
+      return generateAvailableSlots(token, serviceId);
+    },
+    onSuccess: (slots: TimeSlot[]) => {
+      setGeneratedSlots(slots);
+      setSelectedSlot(null);
+    },
+  });
+
+  const addWalkInMutation = useMutation({
+    mutationFn: async (walkInData: {
+      customerName: string;
+      phoneNumber: string;
+      serviceId: string;
+      slot: TimeSlot;
+    }) => {
+      if (!token) throw new Error("No token");
+      console.log("Adding walk-in with data:", walkInData);
+      return addWalkIn(token, walkInData);
+    },
+    onSuccess: async (_, variables) => {
+      handleCloseModal();
+      toast.success(
+        `${variables.customerName.trim() || "Walk-in"} added to queue`,
+      );
+      setIsQueueRefreshingAfterAdd(true);
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["queue", token] });
+      } finally {
+        setIsQueueRefreshingAfterAdd(false);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add walk-in");
+    },
   });
 
   const services: ServiceItem[] = (business?.services || []) as ServiceItem[];
@@ -108,42 +158,30 @@ export default function QueuePage() {
     });
   };
 
-  const generateSlotsMutation = useMutation({
-    mutationFn: async (serviceId: string) => {
-      if (!token) throw new Error("No token");
-      return generateAvailableSlots(token, serviceId);
-    },
-    onSuccess: (slots: TimeSlot[]) => {
-      setGeneratedSlots(slots);
-      setSelectedSlot(null);
-    },
-  });
+  const handleStatusUpdate = (
+    status: "DONE" | "REMOVED",
+    queueEntryId: number,
+    token: string,
+  ) => {
+    if (!status) {
+      toast.error("Invalid status");
+      return;
+    }
 
-  const addWalkInMutation = useMutation({
-    mutationFn: async (walkInData: {
-      customerName: string;
-      phoneNumber: string;
-      serviceId: string;
-      slot: TimeSlot;
-    }) => {
-      if (!token) throw new Error("No token");
-      console.log("Adding walk-in with data:", walkInData);
-      return addWalkIn(token, walkInData);
-    },
-    onSuccess: async (_, variables) => {
-      handleCloseModal();
-      toast.success(`${variables.customerName.trim() || "Walk-in"} added to queue`);
-      setIsQueueRefreshingAfterAdd(true);
-      try {
-        await queryClient.invalidateQueries({ queryKey: ["queue", token] });
-      } finally {
-        setIsQueueRefreshingAfterAdd(false);
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to add walk-in");
-    },
-  });
+    updateQueueEntryStatus(token, queueEntryId, status)
+      .then(() => {
+        if (status === "REMOVED") {
+          toast.error("Queue entry removed");
+          return;
+        }
+
+        toast.success("Queue entry marked as DONE");
+        queryClient.invalidateQueries({ queryKey: ["queue", token] });
+      })
+      .catch((error: Error) => {
+        toast.error(error.message || "Failed to update queue entry status");
+      });
+  };
 
   return (
     <div className="space-y-4">
@@ -171,7 +209,8 @@ export default function QueuePage() {
                     </p>
                     <p className="mt-1 text-xs text-gray-400 truncate">
                       {currentServiceEntry.booking.service.service} ·{" "}
-                      {currentServiceEntry.booking.service.durationMinutes} min ·{" "}
+                      {currentServiceEntry.booking.service.durationMinutes} min
+                      ·{" "}
                       <Clock3
                         size={12}
                         className="text-gray-400 inline-block align-[-2px]"
@@ -287,7 +326,7 @@ export default function QueuePage() {
                             ? "bg-emerald-100 border border-emerald-200 text-emerald-700"
                             : entry.position === 2
                               ? "bg-white border border-gray-200 text-gray-500"
-                            : "bg-white border border-gray-200 text-gray-500"
+                              : "bg-white border border-gray-200 text-gray-500"
                         }`}
                       >
                         {getQueueStatusLabel(entry.position)}
@@ -298,9 +337,41 @@ export default function QueuePage() {
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <button className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-black flex items-center justify-center transition-colors">
-                        <MoreHorizontal size={14} />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-black flex items-center justify-center transition-colors">
+                            <MoreHorizontal size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuLabel className="text-xs font-medium text-gray-600">
+                            Mark as
+                          </DropdownMenuLabel>
+                          <DropdownMenuItem
+                            className="text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              if (!token) throw new Error("No token");
+                              handleStatusUpdate("DONE", entry.id, token);
+                            }}
+                          >
+                            <Check
+                              size={16}
+                              className="text-emerald-600 mr-2"
+                            />
+                            DONE
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              if (!token) throw new Error("No token");
+                              handleStatusUpdate("REMOVED", entry.id, token);
+                            }}
+                          >
+                            <Trash2 size={16} className="text-red-500 mr-2" />
+                            REMOVED
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
@@ -425,7 +496,9 @@ export default function QueuePage() {
                         generateSlotsMutation.mutate(selectedServiceId)
                       }
                       disabled={
-                        !selectedServiceId || generateSlotsMutation.isPending
+                        !selectedServiceId ||
+                        generateSlotsMutation.isPending ||
+                        addWalkInMutation.isPending
                       }
                       className="w-full rounded-lg bg-black px-4 py-2.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >

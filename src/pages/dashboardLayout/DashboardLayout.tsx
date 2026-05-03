@@ -2,8 +2,8 @@ import { Outlet, NavLink } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
 import { useAuth } from "../../contexts/Authcontext";
 import {
-  Users, CalendarClock, Settings, LayoutDashboard,
-  ClipboardList, LogOut, ChevronRight, Calendar
+  Users, CalendarClock, LayoutDashboard,
+  ClipboardList, LogOut, Calendar
 } from "lucide-react";
 
 const navItems = [
