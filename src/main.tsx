@@ -8,8 +8,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from "./contexts/Authcontext.tsx";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner";
+import {ImageKitProvider} from "@imagekit/react";
 
-const GOOGLE_AUTH_API_KEY = import.meta.env.VITE_GOOGLE_AUTH_API_KEY; 
+const GOOGLE_AUTH_API_KEY = import.meta.env.VITE_GOOGLE_AUTH_API_KEY;
+const IMAGEKIT_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT;
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
@@ -17,8 +19,10 @@ createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
     <AuthProvider>
     <GoogleOAuthProvider clientId={GOOGLE_AUTH_API_KEY}>
+      <ImageKitProvider urlEndpoint={IMAGEKIT_URL_ENDPOINT}>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors closeButton />
+      </ImageKitProvider>
     </GoogleOAuthProvider>
     </AuthProvider>
   </QueryClientProvider>

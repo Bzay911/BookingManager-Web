@@ -11,9 +11,11 @@ import {
   Trash2,
   ChevronRight,
   Tag,
+  X,
 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Skeleton } from "../../../components/ui/skeleton";
+import ImageUploader from "../../../components/ImageUploader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -22,6 +24,17 @@ interface ServiceItem {
   service: string;
   price: number;
   durationMinutes: number;
+}
+
+interface EditableBusinessProfile {
+  businessName: string;
+  businessAddress: string;
+}
+
+interface UpdateProfilePayload {
+  businessName: string;
+  businessAddress: string;
+  businessProfileImage?: string;
 }
 
 const fetchBusinessByOwner = async (token: string | null) => {
@@ -39,23 +52,39 @@ const fetchBusinessByOwner = async (token: string | null) => {
   return Array.isArray(data) ? data[0] : data;
 };
 
-const addService = async (token: string | null, serviceName: string, servicePrice: number, serviceDuration: number) => {
+const addService = async (
+  token: string | null,
+  serviceName: string,
+  servicePrice: number,
+  serviceDuration: number,
+) => {
   const response = await fetch(`${API_BASE_URL}/api/services/add-service`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      serviceName: serviceName,
-      servicePrice: servicePrice,
-      serviceDuration: serviceDuration,
-    }),
+    body: JSON.stringify({ serviceName, servicePrice, serviceDuration }),
   });
   if (!response.ok) throw new Error("Failed to add service");
-  const data = await response.json();
-  return data;
-}
+  return response.json();
+};
+
+const updateBusinessProfile = async (
+  token: string | null,
+  payload: UpdateProfilePayload,
+) => {
+  const response = await fetch(`${API_BASE_URL}/api/business/update-business`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("Failed to update business profile");
+  return response.json();
+};
 
 function BusinessLoadingSkeleton() {
   return (
@@ -74,7 +103,6 @@ function BusinessLoadingSkeleton() {
           <Skeleton className="h-4 w-full" />
         </div>
       </section>
-
       <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <div className="space-y-1.5">
@@ -96,11 +124,19 @@ function BusinessLoadingSkeleton() {
 export default function BusinessPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDurationMinutes, setServiceDurationMinutes] = useState("");
-  const [addedServices] = useState<ServiceItem[]>([]);
+
+  const [draftProfile, setDraftProfile] = useState<EditableBusinessProfile>({
+    businessName: "",
+    businessAddress: "",
+  });
+  const [uploadedProfileImageUrl, setUploadedProfileImageUrl] = useState<string | null>(null);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["owner-business", token],
@@ -109,44 +145,85 @@ export default function BusinessPage() {
   });
 
   const addServiceMutation = useMutation({
-  mutationFn: ({ serviceName, servicePrice, serviceDuration }: { serviceName: string; servicePrice: number; serviceDuration: number }) =>
-    addService(token, serviceName, servicePrice, serviceDuration),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["owner-business"] });
-     setServiceName("");
-    setServicePrice("");
-    setServiceDurationMinutes("");
-    setIsAddServiceModalOpen(false);
-  },
-});
+    mutationFn: ({
+      serviceName,
+      servicePrice,
+      serviceDuration,
+    }: {
+      serviceName: string;
+      servicePrice: number;
+      serviceDuration: number;
+    }) => addService(token, serviceName, servicePrice, serviceDuration),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner-business"] });
+      setServiceName("");
+      setServicePrice("");
+      setServiceDurationMinutes("");
+      setIsAddServiceModalOpen(false);
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (payload: UpdateProfilePayload) =>
+      updateBusinessProfile(token, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner-business"] });
+      closeProfileModal();
+    },
+    onError: (error) => {
+      console.error("Failed to update profile:", error);
+    },
+  });
 
   const displayedServices: ServiceItem[] = [
     ...((business?.services || []) as ServiceItem[]),
-    ...addedServices,
   ];
+
+  const handleOpenProfileModal = () => {
+    setDraftProfile({
+      businessName: business.businessName,
+      businessAddress: business.businessAddress,
+    });
+    setUploadedProfileImageUrl(null);
+    setIsEditProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setUploadedProfileImageUrl(null);
+    setIsEditProfileModalOpen(false);
+  };
+
+  const handleSaveProfile = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!draftProfile.businessName.trim() || !draftProfile.businessAddress.trim()) return;
+
+    const payload: UpdateProfilePayload = {
+      businessName: draftProfile.businessName,
+      businessAddress: draftProfile.businessAddress,
+      ...(uploadedProfileImageUrl && { businessProfileImage: uploadedProfileImageUrl }),
+    };
+
+    updateProfileMutation.mutate(payload);
+  };
 
   const handleAddService = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!serviceName.trim() || !servicePrice.trim() || !serviceDurationMinutes.trim()) {
-      return;
-    }
+    if (!serviceName.trim() || !servicePrice.trim() || !serviceDurationMinutes.trim()) return;
 
     const parsedPrice = Number(servicePrice);
     const parsedDuration = Number(serviceDurationMinutes);
 
-    if (Number.isNaN(parsedPrice) || Number.isNaN(parsedDuration)) {
-      return;
-    }
+    if (Number.isNaN(parsedPrice) || Number.isNaN(parsedDuration)) return;
 
     addServiceMutation.mutate({
-      serviceName: serviceName,
+      serviceName,
       servicePrice: parsedPrice,
       serviceDuration: parsedDuration,
     });
   };
 
-  // Use the Shimmer Effect during loading
   if (isLoading) return <BusinessLoadingSkeleton />;
 
   if (!business)
@@ -159,8 +236,8 @@ export default function BusinessPage() {
 
   return (
     <div className="space-y-4">
+      {/* Business Profile Card */}
       <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm relative overflow-hidden group">
-
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 shrink-0 overflow-hidden transition-transform group-hover:scale-105 duration-300">
             {business.businessProfileImage ? (
@@ -184,12 +261,15 @@ export default function BusinessPage() {
               </Badge>
             </div>
             <p className="text-xs text-gray-400 flex items-center gap-1.5">
-              <MapPin size={12} className="text-gray-300" />{" "}
+              <MapPin size={12} className="text-gray-300" />
               {business.businessAddress}
             </p>
           </div>
 
-          <button className="md:ml-auto px-4 py-2 bg-gray-50 text-black border border-gray-200 rounded-lg text-xs font-medium hover:bg-white hover:shadow-sm transition-all flex items-center gap-1.5">
+          <button
+            onClick={handleOpenProfileModal}
+            className="md:ml-auto px-4 py-2 bg-gray-50 text-black border border-gray-200 rounded-lg text-xs font-medium hover:bg-white hover:shadow-sm transition-all flex items-center gap-1.5"
+          >
             Update Profile <ChevronRight size={12} />
           </button>
         </div>
@@ -216,12 +296,120 @@ export default function BusinessPage() {
         </div>
       </section>
 
+      {/* Edit Profile Modal */}
+      {isEditProfileModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] p-4 flex items-center justify-center"
+          onClick={closeProfileModal}
+        >
+          <div
+            className="w-full max-w-2xl rounded-[24px] border border-gray-200 bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/70">
+              <div>
+                <h3 className="text-base font-semibold text-black">Update Profile</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Change your business name, location, and profile image.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeProfileModal}
+                className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-500 hover:text-black hover:bg-gray-50 flex items-center justify-center transition-colors"
+                aria-label="Close profile editor"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Business Name
+                  </label>
+                  <input
+                    type="text"
+                    value={draftProfile.businessName}
+                    onChange={(e) =>
+                      setDraftProfile((prev) => ({
+                        ...prev,
+                        businessName: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    placeholder="Enter business name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Location / Address
+                  </label>
+                  <input
+                    type="text"
+                    value={draftProfile.businessAddress}
+                    onChange={(e) =>
+                      setDraftProfile((prev) => ({
+                        ...prev,
+                        businessAddress: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    placeholder="Enter business location"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Image Uploader */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Profile Image
+                </label>
+                <ImageUploader
+                  onUploadSuccess={(img) => setUploadedProfileImageUrl(img.url)}
+                />
+              </div>
+
+              {/* Error message */}
+              {updateProfileMutation.isError && (
+                <p className="text-xs text-red-500">
+                  Something went wrong. Please try again.
+                </p>
+              )}
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeProfileModal}
+                  disabled={updateProfileMutation.isPending}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateProfileMutation.isPending}
+                  className="px-5 py-2.5 rounded-xl bg-black text-white text-xs font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Services Section */}
       <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-sm font-medium text-black">
-              Current Offerings
-            </h3>
+            <h3 className="text-sm font-medium text-black">Current Offerings</h3>
             <p className="text-[10px] text-gray-400">
               Add or edit the services your customers can book
             </p>
@@ -243,10 +431,7 @@ export default function BusinessPage() {
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center border border-gray-100 group-hover:bg-gray-100 transition-colors">
-                    <Tag
-                      size={14}
-                      className="text-gray-400"
-                    />
+                    <Tag size={14} className="text-gray-400" />
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-black">
@@ -254,13 +439,10 @@ export default function BusinessPage() {
                     </h4>
                     <p className="text-[10px] text-gray-400">
                       {service.durationMinutes} mins •{" "}
-                      <span className="text-black font-medium">
-                        ${service.price}
-                      </span>
+                      <span className="text-black font-medium">${service.price}</span>
                     </p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     className="p-1.5 text-gray-400 hover:text-black transition-all rounded-lg hover:bg-gray-100"
@@ -280,14 +462,13 @@ export default function BusinessPage() {
           ) : (
             <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-xl">
               <Tag size={20} className="text-gray-200 mx-auto mb-2" />
-              <p className="text-xs font-medium text-gray-400">
-                No services added yet
-              </p>
+              <p className="text-xs font-medium text-gray-400">No services added yet</p>
             </div>
           )}
         </div>
       </section>
 
+      {/* Add Service Modal */}
       {isAddServiceModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] p-4 flex items-center justify-center"
@@ -318,7 +499,6 @@ export default function BusinessPage() {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">
                   Price
@@ -334,7 +514,6 @@ export default function BusinessPage() {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">
                   Duration (minutes)
@@ -350,7 +529,6 @@ export default function BusinessPage() {
                   required
                 />
               </div>
-
               <div className="pt-1 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -359,13 +537,13 @@ export default function BusinessPage() {
                 >
                   Cancel
                 </button>
-              <button
-  type="submit"
-  disabled={addServiceMutation.isPending}
-  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800 disabled:opacity-50"
->
-  {addServiceMutation.isPending ? "Saving..." : "Save Service"}
-</button>
+                <button
+                  type="submit"
+                  disabled={addServiceMutation.isPending}
+                  className="px-4 py-2 rounded-lg bg-black text-white text-xs font-medium hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {addServiceMutation.isPending ? "Saving..." : "Save Service"}
+                </button>
               </div>
             </form>
           </div>

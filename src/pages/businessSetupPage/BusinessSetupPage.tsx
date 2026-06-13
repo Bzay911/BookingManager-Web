@@ -200,7 +200,7 @@ export default function SetupBusinessPage() {
             </div>
 
             <h2 className="text-3xl font-extrabold text-black text-center mb-2 tracking-tight">
-              Check your WhatsApp
+              Check your Messages
             </h2>
             <p className="text-center text-gray-500 font-medium mb-8">
               We just sent a 6-digit verification code to <br />

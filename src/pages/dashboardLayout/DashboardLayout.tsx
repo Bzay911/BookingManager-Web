@@ -96,7 +96,7 @@ export default function DashboardLayout() {
 
           <h1 className="text-lg">
             Welcome back,{" "}
-              {user?.displayName?.split(" ")[0] ?? "there"}
+              {user?.business?.businessName || "Business Owner"}
           </h1>
           <p className="text-sm text-gray-400">Here is what's happening with your business today</p>
           </div>

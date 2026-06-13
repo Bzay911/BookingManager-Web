@@ -107,12 +107,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-black sm:text-4xl">
-          {business?.businessName ?? "Your business"}
-        </h1>
-      </section>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-5">
