@@ -160,7 +160,15 @@ export default function BrowsePage() {
                                 {/* Card Image Container */}
                                 <div className="relative aspect-[1.1] rounded-[32px] bg-slate-100 overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-500">
                                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-                                        <Store size={48} className="text-slate-200 group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                        {business.businessProfileImage ? (
+                                            <img 
+                                                src={business.businessProfileImage} 
+                                                alt={business.businessName} 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <Store size={48} className="text-slate-200 group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                        )}
                                     </div>
                                     
                                     {/* Status Badge Overlay */}

@@ -136,7 +136,9 @@ export default function BusinessPage() {
     businessName: "",
     businessAddress: "",
   });
+
   const [uploadedProfileImageUrl, setUploadedProfileImageUrl] = useState<string | null>(null);
+  const [coverImageUrls, setCoverImageUrls] = useState<string[]>([]);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["owner-business", token],
@@ -202,6 +204,7 @@ export default function BusinessPage() {
       businessName: draftProfile.businessName,
       businessAddress: draftProfile.businessAddress,
       ...(uploadedProfileImageUrl && { businessProfileImage: uploadedProfileImageUrl }),
+      ...(coverImageUrls.length > 0 && { businessCoverImages: coverImageUrls }),
     };
 
     updateProfileMutation.mutate(payload);
@@ -372,6 +375,19 @@ export default function BusinessPage() {
                 </label>
                 <ImageUploader
                   onUploadSuccess={(img) => setUploadedProfileImageUrl(img.url)}
+                />
+              </div>
+          
+              {/* Cover Image Uploader */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Cover Images
+                </label>
+
+                <ImageUploader
+                  multiple
+                  folder="/covers"
+                  onUploadSuccess={(img) => setCoverImageUrls((prev) => [...prev, img.url])}
                 />
               </div>
 

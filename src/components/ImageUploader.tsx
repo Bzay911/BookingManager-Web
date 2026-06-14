@@ -10,14 +10,20 @@ interface UploadedImage {
 }
 
 interface ImageUploaderProps {
-  onUploadSuccess?: (image: UploadedImage) => void;
+  multiple?: boolean;
+  folder?: string;
+  onUploadSuccess?: (image: UploadedImage) => void; // fires once PER file
 }
 
-export default function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
+export default function ImageUploader({
+  multiple = false,
+  folder = '/uploads',
+  onUploadSuccess,
+}: ImageUploaderProps) {
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -28,8 +34,10 @@ export default function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
   };
 
   const handleUpload = async () => {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) return;
+    const files = fileInputRef.current?.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
 
     setError(null);
     setProgress(0);
@@ -37,28 +45,34 @@ export default function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { token, expire, signature } = await fetchAuthParams();
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        const { token, expire, signature } = await fetchAuthParams();
 
-      const response = await upload({
-        file,
-        fileName: file.name,
-        publicKey: IMAGEKIT_PUBLIC_KEY,
-        signature,
-        expire,
-        token,
-        folder: '/uploads',
-        onProgress: (e) => setProgress(Math.round((e.loaded / e.total) * 100)),
-        abortSignal: abortControllerRef.current.signal,
-      });
+        const response = await upload({
+          file,
+          fileName: file.name,
+          publicKey: IMAGEKIT_PUBLIC_KEY,
+          signature,
+          expire,
+          token,
+          folder,
+          onProgress: (e) => {
+            const fileProgress = e.loaded / e.total;
+            setProgress(Math.round(((i + fileProgress) / fileArray.length) * 100));
+          },
+          abortSignal: abortControllerRef.current.signal,
+        });
 
-      const uploaded = {
-        fileId: response.fileId ?? '',
-        url: response.url ?? '',
-        name: response.name ?? '',
-      };
+        const uploaded = {
+          fileId: response.fileId ?? '',
+          url: response.url ?? '',
+          name: response.name ?? '',
+        };
 
-      setUploadedImage(uploaded);
-      onUploadSuccess?.(uploaded);
+        setUploadedImages((prev) => [...prev, uploaded]);
+        onUploadSuccess?.(uploaded); // notify parent for EACH file
+      }
 
       if (fileInputRef.current) fileInputRef.current.value = '';
       setProgress(0);
@@ -88,6 +102,7 @@ export default function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple={multiple}
           disabled={uploading}
           className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-black file:text-white hover:file:bg-gray-800 file:cursor-pointer"
         />
@@ -121,17 +136,16 @@ export default function ImageUploader({ onUploadSuccess }: ImageUploaderProps) {
 
       {error && <p className="text-xs text-red-500">{error}</p>}
 
-      {uploadedImage && (
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
-          <img
-            src={uploadedImage.url}
-            alt={uploadedImage.name}
-            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-          />
-          <div>
-            <p className="text-xs font-medium text-gray-700 truncate">{uploadedImage.name}</p>
-            <p className="text-[10px] text-green-600 font-medium mt-0.5">Uploaded successfully</p>
-          </div>
+      {uploadedImages.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {uploadedImages.map((img) => (
+            <div
+              key={img.fileId}
+              className="aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
+            >
+              <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+            </div>
+          ))}
         </div>
       )}
     </div>

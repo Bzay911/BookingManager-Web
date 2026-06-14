@@ -1,6 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../../contexts/Authcontext";
 import {
   ArrowLeft,
   MapPin,
@@ -18,6 +17,27 @@ import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "../../components/ui/badge";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+interface BusinessService {
+  id: string | number;
+  service: string;
+  durationMinutes: number;
+  price: number;
+}
+
+interface BusinessDetails {
+  id: string | number;
+  businessName?: string;
+  businessAddress?: string;
+  description?: string;
+  openingTime?: string;
+  closingTime?: string;
+  businessPhoneNumber?: string;
+  businessProfileImage?: string;
+  businessCoverImages?: string[];
+  coverImages?: string[];
+  services?: BusinessService[];
+}
 
 const fetchBusinessDetails = async (id: string) => {
   const response = await fetch(
@@ -40,11 +60,17 @@ export default function BusinessDetailsPage() {
     data: business,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<BusinessDetails>({
     queryKey: ["business", id],
     queryFn: () => fetchBusinessDetails(id as string),
     enabled: !!id,
   });
+
+  const coverImages = Array.isArray(business?.businessCoverImages)
+    ? business.businessCoverImages.filter(Boolean)
+    : Array.isArray(business?.coverImages)
+      ? business.coverImages.filter(Boolean)
+      : [];
 
   const whatsappUrl = `https://wa.me/14155238886?text=${encodeURIComponent(
     `BUSINESS:${business?.id} Hi! I'd like to book an appointment at ${business?.businessName}`
@@ -113,22 +139,49 @@ export default function BusinessDetailsPage() {
         </div>
 
         {/* Professional Gallery Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-auto md:h-[480px] mb-12 rounded-2xl overflow-hidden border border-slate-100">
-          <div className="md:col-span-2 md:row-span-2 bg-slate-50 flex items-center justify-center border-r border-slate-100 group relative">
-            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={48} />
-          </div>
-          <div className="md:col-span-2 md:row-span-1 bg-slate-50 flex items-center justify-center border-b border-slate-100 group relative">
-            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={32} />
-          </div>
-          <div className="md:col-span-1 md:row-span-1 bg-slate-50 flex items-center justify-center border-r border-slate-100 group relative">
-            <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={24} />
-          </div>
-          <div className="md:col-span-1 md:row-span-1 bg-slate-100 flex items-center justify-center group relative">
-             <div className="text-center">
-                <p className="font-bold text-slate-600 text-sm">View All</p>
-                <p className="text-[10px] text-slate-400 font-medium uppercase">12+ Photos</p>
-             </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-auto md:h-120 mb-12 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
+          {coverImages.length > 0 ? (
+            coverImages.slice(0, 5).map((imageUrl: string, index: number) => {
+              const isPrimary = index === 0;
+
+              return (
+                <div
+                  key={`${imageUrl}-${index}`}
+                  className={`group relative overflow-hidden bg-slate-100 ${
+                    isPrimary
+                      ? "md:col-span-2 md:row-span-2 min-h-80"
+                      : "md:col-span-1 md:row-span-1"
+                  }`}
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`${business?.businessName || "Business"} cover ${index + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/35 via-transparent to-transparent opacity-80" />
+                </div>
+              );
+            })
+          ) : (
+            <>
+              <div className="md:col-span-2 md:row-span-2 flex min-h-80 items-center justify-center bg-white border-r border-slate-100 group relative">
+                <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={48} />
+              </div>
+              <div className="md:col-span-1 md:row-span-1 flex items-center justify-center bg-slate-50 border-b border-r border-slate-100 group relative">
+                <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={32} />
+              </div>
+              <div className="md:col-span-1 md:row-span-1 flex items-center justify-center bg-slate-50 border-b border-slate-100 group relative">
+                <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={32} />
+              </div>
+              <div className="md:col-span-1 md:row-span-1 flex items-center justify-center bg-slate-50 border-r border-slate-100 group relative">
+                <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={24} />
+              </div>
+              <div className="md:col-span-1 md:row-span-1 flex items-center justify-center bg-slate-100 group relative">
+                <ImageIcon className="text-slate-200 group-hover:scale-105 transition-transform duration-700" size={24} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Main Content Split */}
@@ -151,7 +204,7 @@ export default function BusinessDetailsPage() {
                 Services & Pricing
               </h2>
               <div className="space-y-3">
-                {business?.services?.map((service: any) => (
+                {business?.services?.map((service) => (
                   <div
                     key={service.id}
                     className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-xl hover:border-slate-200 hover:bg-slate-50/50 transition-all group"
